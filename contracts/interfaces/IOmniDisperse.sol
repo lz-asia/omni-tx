@@ -6,6 +6,8 @@ interface IOmniDisperse {
     error DstChainNotFound(uint16 chainId);
     error TokenNotFound(uint256 poolId);
     error Forbidden();
+    error NoStoredMessage();
+    error InvalidPayload();
 
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
     event UpdateToken(uint256 indexed poolId, address indexed token);
@@ -43,11 +45,5 @@ interface IOmniDisperse {
         address token,
         uint256 amountLD,
         bytes32 paramsHash
-    );
-    event CancelFailedMessage(
-        uint16 indexed srcChainId,
-        address indexed srcAddress,
-        address indexed srcFrom,
-        uint256 nonce
     );
 }

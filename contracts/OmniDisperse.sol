@@ -162,17 +162,62 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
     ) public {
         if (msg.sender != address(this)) revert Forbidden();
 
-        (address[] memory recipients, uint256[] memory amounts) = abi.decode(params, (address[], uint256[]));
-        for (uint256 i; i < recipients.length; ) {
-            IERC20(token).safeTransfer(recipients[i], amounts[i]);
+        _handleMessage(srcChainId, srcAddress, srcFrom, token, amountLD, params);
+    }
 
+    function _handleMessage(
+        uint16 srcChainId,
+        address srcAddress,
+        address srcFrom,
+        address token,
+        uint256 amountLD,
+        bytes memory params
+    ) internal {
+        (address[] memory recipients, uint256[] memory amounts) = abi.decode(params, (address[], uint256[]));
+
+        uint256 amountTotal;
+        for (uint256 i; i < recipients.length; ) {
+            uint256 amount = amounts[i];
+            IERC20(token).safeTransfer(recipients[i], amount);
+
+            amountTotal += amount;
             unchecked {
                 ++i;
             }
         }
 
-        // TODO: transfer back unused token to srcFrom
+        if (amountTotal < amountLD) {
+            IERC20(token).safeTransfer(srcFrom, amountLD - amountTotal);
+        }
 
         emit HandleMessage(srcChainId, srcAddress, srcFrom, token, amountLD, keccak256(params));
+    }
+
+    //---------------------------------------------------------------------------
+    // FAILSAFE FUNCTIONS
+    function retryMessage(
+        uint16 srcChainId,
+        address srcAddress,
+        address srcFrom,
+        uint256 nonce,
+        bytes calldata params
+    ) external payable {
+        FailedMessage memory message = failedMessages[srcChainId][srcAddress][srcFrom][nonce];
+        if (message.paramsHash == bytes32(0)) revert NoStoredMessage();
+        if (keccak256(params) != message.paramsHash) revert InvalidPayload();
+
+        delete failedMessages[srcChainId][srcAddress][srcFrom][nonce];
+
+        _handleMessage(srcChainId, srcAddress, srcFrom, message.token, message.amountLD, params);
+
+        emit RetryMessageSuccess(
+            srcChainId,
+            srcAddress,
+            srcFrom,
+            nonce,
+            message.token,
+            message.amountLD,
+            message.paramsHash
+        );
     }
 }
