@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -21,7 +21,6 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
 
     address public immutable sgRouter;
     mapping(uint16 => address) public dstAddress;
-    mapping(uint16 => uint256) public gasLookup;
     mapping(uint256 => address) public tokenLookup;
     mapping(uint16 => mapping(address => mapping(address => mapping(uint256 => FailedMessage)))) public failedMessages; // srcChainId -> srcAddress -> srcFrom -> nonce -> FailedMessage
 
@@ -33,6 +32,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         uint16 dstChainId,
         address[] memory dstRecipients,
         uint256[] memory dstAmounts,
+        uint256 gas,
         address from
     ) external view returns (uint256) {
         address dst = dstAddress[dstChainId];
@@ -50,8 +50,8 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             dstChainId,
             1, /*TYPE_SWAP_REMOTE*/
             abi.encodePacked(dst),
-            abi.encodePacked(from, abi.encode(dstRecipients), abi.encode(dstAmounts)),
-            IStargateRouter.lzTxObj(gasLookup[dstChainId], 0, "0x")
+            abi.encodePacked(from, abi.encode(dstRecipients, dstAmounts)),
+            IStargateRouter.lzTxObj(gas, 0, "0x")
         );
         return fee;
     }
@@ -69,22 +69,22 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
     function transfer(
         uint16 dstChainId,
         uint256 poolId,
-        address payable refundAddress,
         uint256 amount,
         address[] memory dstRecipients,
-        uint256[] memory dstAmounts
+        uint256[] memory dstAmounts,
+        uint256 gas
     ) external payable {
-        _transfer(dstChainId, poolId, refundAddress, amount, dstRecipients, dstAmounts, msg.sender, msg.value);
+        _transfer(dstChainId, poolId, amount, dstRecipients, dstAmounts, gas, payable(msg.sender), msg.value);
     }
 
     function _transfer(
         uint16 dstChainId,
         uint256 poolId,
-        address payable refundAddress,
         uint256 amount,
         address[] memory dstRecipients,
         uint256[] memory dstAmounts,
-        address from,
+        uint256 gas,
+        address payable from,
         uint256 fee
     ) internal {
         address dst = dstAddress[dstChainId];
@@ -100,15 +100,16 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             }
         }
 
+        IERC20(token).safeTransferFrom(from, address(this), amount);
         IERC20(token).approve(sgRouter, amount);
         IStargateRouter(sgRouter).swap{value: fee}(
             dstChainId,
             poolId,
             poolId,
-            refundAddress,
+            from,
             amount,
             dstMinAmount,
-            IStargateRouter.lzTxObj(gasLookup[dstChainId], 0, "0x"),
+            IStargateRouter.lzTxObj(gas, 0, "0x"),
             abi.encodePacked(dst),
             abi.encodePacked(from, abi.encode(dstRecipients, dstAmounts))
         );

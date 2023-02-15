@@ -54,7 +54,7 @@
     "fantom-testnet:deploy": "hardhat --network fantom-testnet deploy",
     "fantom-testnet:export": "hardhat --network fantom-testnet export --export exports/fantom-testnet.json",
     "test": "cross-env TS_NODE_TRANSPILE_ONLY=1 hardhat test",
-    "test:trace": "cross-env TS_NODE_TRANSPILE_ONLY=1 hardhat test --trace",
+    "test:trace": "cross-env TS_NODE_TRANSPILE_ONLY=1 hardhat test --fulltrace",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" hardhat coverage",
     "test:gas": "cross-env REPORT_GAS=true yarn test",
     "prepublish": "rimraf abis artifacts cache coverage docs typechain-types && yarn build"
@@ -98,6 +98,7 @@
     "hardhat-log-remover": "^2.0.0",
     "hardhat-preprocessor": "^0.1.0",
     "hardhat-spdx-license-identifier": "^2.0.0",
+    "hardhat-tracer": "^1.2.1",
     "hardhat-watcher": "^2.5.0",
     "husky": "^8.0.0",
     "lint-staged": "^13.0.0",
