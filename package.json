@@ -1,17 +1,17 @@
 {
-  "name": "@lz-asia/layerzero-foundation",
+  "name": "@lz-asia/omni-disperse",
   "description": "",
+  "version": "0.1.0",
   "keywords": [
     "layerzero",
     "lz"
   ],
-  "homepage": "https://github.com/lz-asia/layerzero-foundation#readme",
-  "bugs": "https://github.com/lz-asia/layerzero-foundation/issues",
+  "homepage": "https://github.com/lz-asia/omni-disperse#readme",
+  "bugs": "https://github.com/lz-asia/omni-disperse/issues",
   "license": "MIT",
   "author": "LevX <team@levx.io>",
   "files": [
     "abis",
-    "contracts",
     "deployments",
     "docs",
     "typechain-types"
