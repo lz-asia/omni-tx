@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 interface IOmniDisperse {
     error DstChainNotFound(uint16 chainId);
-    error TokenNotFound(uint256 poolId);
+    error PoolNotFound(uint256 poolId);
     error Forbidden();
     error NoStoredMessage();
     error InvalidPayload();
@@ -46,4 +46,40 @@ interface IOmniDisperse {
         uint256 amountLD,
         bytes32 paramsHash
     );
+
+    struct SwapParams {
+        uint256 poolId;
+        uint256 amount;
+        uint16 dstChainId;
+        uint256 dstPoolId;
+        address[] dstRecipients;
+        uint256[] dstAmounts;
+        uint256 gas;
+    }
+
+    struct FailedMessage {
+        address token;
+        uint256 amountLD;
+        bytes32 paramsHash;
+    }
+
+    function estimateFee(
+        uint16 dstChainId,
+        address[] memory dstRecipients,
+        uint256[] memory dstAmounts,
+        uint256 gas,
+        address from
+    ) external view returns (uint256);
+
+    function updateDstAddress(uint16 dstChainId, address _dstAddress) external;
+
+    function swap(SwapParams memory params) external payable;
+
+    function retryMessage(
+        uint16 srcChainId,
+        address srcAddress,
+        address srcFrom,
+        uint256 nonce,
+        bytes calldata params
+    ) external payable;
 }

@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { ERC20Mock, LZEndpointMock, OmniDisperse, StargateRouterMock } from "../typechain-types";
+import { ERC20Mock, LZEndpointMock, OmniDisperse, StargateFactoryMock, StargateRouterMock } from "../typechain-types";
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
@@ -9,20 +9,20 @@ export const POOL_USDT = 2;
 export const POOL_DAI = 3;
 
 const boostrapNetwork = async (deployer, chainId, endpoint, usdc, usdt, dai) => {
+    const Factory = await ethers.getContractFactory("StargateFactoryMock");
+    const factory = (await Factory.connect(deployer).deploy()) as StargateFactoryMock;
+    await factory.connect(deployer).createPool(POOL_USDC, usdc.address);
+    await factory.connect(deployer).createPool(POOL_USDT, usdt.address);
+    await factory.connect(deployer).createPool(POOL_DAI, dai.address);
+
     const Router = await ethers.getContractFactory("StargateRouterMock");
-    const router = (await Router.connect(deployer).deploy(endpoint.address)) as StargateRouterMock;
-    await router.connect(deployer).createPool(POOL_USDC, usdc.address);
-    await router.connect(deployer).createPool(POOL_USDT, usdt.address);
-    await router.connect(deployer).createPool(POOL_DAI, dai.address);
+    const router = (await Router.connect(deployer).deploy(endpoint.address, factory.address)) as StargateRouterMock;
     for (const token of [usdc, usdt, dai]) {
         await token.mint(router.address, ethers.constants.WeiPerEther.mul(10000));
     }
 
     const Disperse = await ethers.getContractFactory("OmniDisperse");
     const disperse = (await Disperse.connect(deployer).deploy(router.address)) as OmniDisperse;
-    await disperse.updateToken(POOL_USDC, usdc.address);
-    await disperse.updateToken(POOL_USDT, usdt.address);
-    await disperse.updateToken(POOL_DAI, dai.address);
 
     const estimateGas = async (nonce, token, recipients, amounts, from) =>
         await disperse.connect(ethers.provider).estimateGas.sgReceive(

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: WTFPL
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.17;
 
@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/ILayerZeroReceiver.sol";
 import "../interfaces/ILayerZeroEndpoint.sol";
 import "../interfaces/IStargateReceiver.sol";
+import "../interfaces/IStargateFactory.sol";
+import "../interfaces/IStargatePool.sol";
 
 contract StargateRouterMock is ILayerZeroReceiver {
     using SafeERC20 for IERC20;
@@ -16,21 +18,18 @@ contract StargateRouterMock is ILayerZeroReceiver {
         bytes dstNativeAddr;
     }
 
-    address public lzEndpointMock;
+    address public immutable lzEndpointMock;
+    address public immutable factory;
     mapping(uint16 => bytes) public bridgeLookup;
-    mapping(uint256 => address) public getPool;
 
-    constructor(address _lzEndpointMock) {
+    constructor(address _lzEndpointMock, address _factory) {
         lzEndpointMock = _lzEndpointMock;
+        factory = _factory;
     }
 
     function setBridge(uint16 chainId, bytes calldata bridgeAddress) external {
         require(bridgeLookup[chainId].length == 0, "Stargate: Bridge already set!");
         bridgeLookup[chainId] = bridgeAddress;
-    }
-
-    function createPool(uint256 poolId, address token) external {
-        getPool[poolId] = token;
     }
 
     function quoteLayerZeroFee(
@@ -61,7 +60,9 @@ contract StargateRouterMock is ILayerZeroReceiver {
         bytes calldata to,
         bytes calldata params
     ) external payable {
-        IERC20(getPool[srcPoolId]).safeTransferFrom(msg.sender, address(this), amountLD);
+        address pool = IStargateFactory(factory).getPool(srcPoolId);
+        address token = IStargatePool(pool).token();
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amountLD);
 
         address toAddress = address(bytes20(to[0:20]));
         ILayerZeroEndpoint(lzEndpointMock).send{value: msg.value}(
@@ -95,7 +96,8 @@ contract StargateRouterMock is ILayerZeroReceiver {
             payload,
             (uint8, address, uint256, uint256, uint256, bytes)
         );
-        address token = getPool[poolId];
+        address pool = IStargateFactory(factory).getPool(poolId);
+        address token = IStargatePool(pool).token();
         IERC20(token).safeTransfer(to, amountLD);
         if (params.length > 0) {
             IStargateReceiver(to).sgReceive(srcChainId, srcAddress, nonce, token, amountLD, params);

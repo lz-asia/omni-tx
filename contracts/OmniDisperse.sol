@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IStargateReceiver.sol";
 import "./interfaces/IStargateRouter.sol";
+import "./interfaces/IStargateFactory.sol";
+import "./interfaces/IStargatePool.sol";
 import "./interfaces/IOmniDisperse.sol";
 import "./libraries/ExcessivelySafeCall.sol";
 
@@ -13,19 +15,14 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
     using SafeERC20 for IERC20;
     using ExcessivelySafeCall for address;
 
-    struct FailedMessage {
-        address token;
-        uint256 amountLD;
-        bytes32 paramsHash;
-    }
-
-    address public immutable sgRouter;
+    address public immutable router;
+    address public immutable factory;
     mapping(uint16 => address) public dstAddress;
-    mapping(uint256 => address) public tokenLookup;
     mapping(uint16 => mapping(address => mapping(address => mapping(uint256 => FailedMessage)))) public failedMessages; // srcChainId -> srcAddress -> srcFrom -> nonce -> FailedMessage
 
-    constructor(address _sgRouter) {
-        sgRouter = _sgRouter;
+    constructor(address _router) {
+        router = _router;
+        factory = IStargateRouter(_router).factory();
     }
 
     function estimateFee(
@@ -34,19 +31,11 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         uint256[] memory dstAmounts,
         uint256 gas,
         address from
-    ) external view returns (uint256) {
+    ) external view override returns (uint256) {
         address dst = dstAddress[dstChainId];
         if (dst == address(0)) revert DstChainNotFound(dstChainId);
 
-        uint256 dstMinAmount;
-        for (uint256 i; i < dstAmounts.length; ) {
-            dstMinAmount += dstAmounts[i];
-            unchecked {
-                ++i;
-            }
-        }
-
-        (uint256 fee, ) = IStargateRouter(sgRouter).quoteLayerZeroFee(
+        (uint256 fee, ) = IStargateRouter(router).quoteLayerZeroFee(
             dstChainId,
             1, /*TYPE_SWAP_REMOTE*/
             abi.encodePacked(dst),
@@ -56,62 +45,48 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         return fee;
     }
 
-    function updateDstAddress(uint16 dstChainId, address _dstAddress) external onlyOwner {
+    function updateDstAddress(uint16 dstChainId, address _dstAddress) external override onlyOwner {
         dstAddress[dstChainId] = _dstAddress;
         emit UpdateDstAddress(dstChainId, _dstAddress);
     }
 
-    function updateToken(uint256 poolId, address token) external onlyOwner {
-        tokenLookup[poolId] = token;
-        emit UpdateToken(poolId, token);
+    function swap(SwapParams memory params) external payable override {
+        _swap(params, payable(msg.sender), msg.value);
     }
 
-    function transfer(
-        uint16 dstChainId,
-        uint256 poolId,
-        uint256 amount,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
-        uint256 gas
-    ) external payable {
-        _transfer(dstChainId, poolId, amount, dstRecipients, dstAmounts, gas, payable(msg.sender), msg.value);
-    }
-
-    function _transfer(
-        uint16 dstChainId,
-        uint256 poolId,
-        uint256 amount,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
-        uint256 gas,
+    function _swap(
+        SwapParams memory params,
         address payable from,
         uint256 fee
     ) internal {
-        address dst = dstAddress[dstChainId];
-        if (dst == address(0)) revert DstChainNotFound(dstChainId);
-        address token = tokenLookup[poolId];
-        if (token == address(0)) revert TokenNotFound(poolId);
+        address dst = dstAddress[params.dstChainId];
+        if (dst == address(0)) revert DstChainNotFound(params.dstChainId);
+
+        address pool = IStargateFactory(factory).getPool(params.poolId);
+        if (pool == address(0)) revert PoolNotFound(params.poolId);
+
+        address token = IStargatePool(pool).token();
 
         uint256 dstMinAmount;
-        for (uint256 i; i < dstAmounts.length; ) {
-            dstMinAmount += dstAmounts[i];
+        for (uint256 i; i < params.dstAmounts.length; ) {
+            dstMinAmount += params.dstAmounts[i];
             unchecked {
                 ++i;
             }
         }
 
-        IERC20(token).safeTransferFrom(from, address(this), amount);
-        IERC20(token).approve(sgRouter, amount);
-        IStargateRouter(sgRouter).swap{value: fee}(
-            dstChainId,
-            poolId,
-            poolId,
+        IERC20(token).safeTransferFrom(from, address(this), params.amount);
+        IERC20(token).approve(router, params.amount);
+        IStargateRouter(router).swap{value: fee}(
+            params.dstChainId,
+            params.poolId,
+            params.dstPoolId,
             from,
-            amount,
+            params.amount,
             dstMinAmount,
-            IStargateRouter.lzTxObj(gas, 0, "0x"),
+            IStargateRouter.lzTxObj(params.gas, 0, "0x"),
             abi.encodePacked(dst),
-            abi.encodePacked(from, abi.encode(dstRecipients, dstAmounts))
+            abi.encodePacked(from, abi.encode(params.dstRecipients, params.dstAmounts))
         );
     }
 
@@ -125,7 +100,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         uint256 amountLD,
         bytes calldata payload
     ) external override {
-        if (msg.sender != sgRouter) revert Forbidden();
+        if (msg.sender != router) revert Forbidden();
 
         address _srcAddress = address(bytes20(srcAddress[0:20]));
         address srcFrom = address(bytes20(payload[0:20]));
@@ -202,7 +177,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address srcFrom,
         uint256 nonce,
         bytes calldata params
-    ) external payable {
+    ) external payable override {
         FailedMessage memory message = failedMessages[srcChainId][srcAddress][srcFrom][nonce];
         if (message.paramsHash == bytes32(0)) revert NoStoredMessage();
         if (keccak256(params) != message.paramsHash) revert InvalidPayload();
