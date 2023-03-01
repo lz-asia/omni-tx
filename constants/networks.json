@@ -1,6 +1,6 @@
 {
   "mainnet": [
-    "ethereum",
+    "mainnet",
     "bsc",
     "avalanche",
     "polygon",

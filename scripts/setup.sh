@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#yarn run hardhat run scripts/setup.ts --network mainnet &&\
+yarn run hardhat run scripts/setup.ts --network mainnet #&&\
 #yarn run hardhat run scripts/setup.ts --network bsc &&\
 #yarn run hardhat run scripts/setup.ts --network avalanche &&\
 yarn run hardhat run scripts/setup.ts --network polygon &&\
