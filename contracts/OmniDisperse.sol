@@ -35,6 +35,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address[] calldata dstRecipients,
         uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256) {
         address dst = dstAddress[dstChainId];
@@ -45,7 +46,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             1, /*TYPE_SWAP_REMOTE*/
             abi.encodePacked(dst),
             abi.encodePacked(TYPE_TRANSFER_ERC20, from, abi.encode(dstRecipients, dstAmounts)),
-            IStargateRouter.lzTxObj(gas, 0, "0x")
+            IStargateRouter.lzTxObj(gas, dstNativeAmount, abi.encodePacked(from))
         );
         return fee;
     }
@@ -56,6 +57,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address[] calldata dstRecipients,
         uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256) {
         address dst = dstAddress[dstChainId];
@@ -66,7 +68,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             1, /*TYPE_SWAP_REMOTE*/
             abi.encodePacked(dst),
             abi.encodePacked(TYPE_SWAP_TO_NATIVE, from, abi.encode(swapData, dstRecipients, dstAmounts)),
-            IStargateRouter.lzTxObj(gas, 0, "0x")
+            IStargateRouter.lzTxObj(gas, dstNativeAmount, abi.encodePacked(from))
         );
         return fee;
     }
@@ -103,7 +105,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             from,
             params.amount,
             params.dstMinAmount,
-            IStargateRouter.lzTxObj(params.gas, 0, "0x"),
+            IStargateRouter.lzTxObj(params.gas, params.dstNativeAmount, abi.encodePacked(from)),
             abi.encodePacked(dst),
             abi.encodePacked(TYPE_TRANSFER_ERC20, from, abi.encode(params.dstRecipients, params.dstAmounts))
         );
@@ -136,7 +138,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             from,
             params.amount,
             params.dstMinAmount,
-            IStargateRouter.lzTxObj(params.gas, 0, "0x"),
+            IStargateRouter.lzTxObj(params.gas, params.dstNativeAmount, abi.encodePacked(from)),
             abi.encodePacked(dst),
             abi.encodePacked(
                 TYPE_SWAP_TO_NATIVE,

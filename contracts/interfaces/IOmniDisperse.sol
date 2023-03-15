@@ -47,6 +47,7 @@ interface IOmniDisperse {
         address[] dstRecipients;
         uint256[] dstAmounts;
         uint256 gas;
+        uint256 dstNativeAmount;
     }
 
     struct TransferERC20AndSwapToNativeParams {
@@ -59,6 +60,7 @@ interface IOmniDisperse {
         address[] dstRecipients;
         uint256[] dstAmounts;
         uint256 gas;
+        uint256 dstNativeAmount;
     }
 
     function estimateFeeTransferERC20(
@@ -66,6 +68,7 @@ interface IOmniDisperse {
         address[] calldata dstRecipients,
         uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256);
 
@@ -75,6 +78,7 @@ interface IOmniDisperse {
         address[] calldata dstRecipients,
         uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256);
 
