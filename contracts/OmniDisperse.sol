@@ -90,15 +90,6 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         if (pool == address(0)) revert PoolNotFound(params.poolId);
 
         address token = IStargatePool(pool).token();
-
-        uint256 dstMinAmount;
-        for (uint256 i; i < params.dstAmounts.length; ) {
-            dstMinAmount += params.dstAmounts[i];
-            unchecked {
-                ++i;
-            }
-        }
-
         IERC20(token).safeTransferFrom(from, address(this), params.amount);
         IERC20(token).approve(router, params.amount);
         IStargateRouter(router).swap{value: fee}(
@@ -107,7 +98,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
             params.dstPoolId,
             from,
             params.amount,
-            dstMinAmount,
+            params.dstMinAmount,
             IStargateRouter.lzTxObj(params.gas, 0, "0x"),
             abi.encodePacked(dst),
             abi.encodePacked(TYPE_TRANSFER_ERC20, from, abi.encode(params.dstRecipients, params.dstAmounts))

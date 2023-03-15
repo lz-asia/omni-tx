@@ -56,6 +56,7 @@ interface IOmniDisperse {
         uint256 amount;
         uint16 dstChainId;
         uint256 dstPoolId;
+        uint256 dstMinAmount;
         address[] dstRecipients;
         uint256[] dstAmounts;
         uint256 gas;
