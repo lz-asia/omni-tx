@@ -32,11 +32,11 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
 
     function estimateFeeTransferERC20(
         uint16 dstChainId,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
         address from
-    ) external view override returns (uint256) {
+    ) external view returns (uint256) {
         address dst = dstAddress[dstChainId];
         if (dst == address(0)) revert DstChainNotFound(dstChainId);
 
@@ -52,12 +52,12 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
 
     function estimateFeeSwapToNative(
         uint16 dstChainId,
-        bytes[] memory swapData,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        bytes[] calldata swapData,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
         address from
-    ) external view override returns (uint256) {
+    ) external view returns (uint256) {
         address dst = dstAddress[dstChainId];
         if (dst == address(0)) revert DstChainNotFound(dstChainId);
 
@@ -71,17 +71,17 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         return fee;
     }
 
-    function updateDstAddress(uint16 dstChainId, address _dstAddress) external override onlyOwner {
+    function updateDstAddress(uint16 dstChainId, address _dstAddress) external onlyOwner {
         dstAddress[dstChainId] = _dstAddress;
         emit UpdateDstAddress(dstChainId, _dstAddress);
     }
 
-    function transferERC20(TransferERC20Params memory params) external payable override {
+    function transferERC20(TransferERC20Params calldata params) external payable {
         _transferERC20(params, payable(msg.sender), msg.value);
     }
 
     function _transferERC20(
-        TransferERC20Params memory params,
+        TransferERC20Params calldata params,
         address payable from,
         uint256 fee
     ) internal {
@@ -109,12 +109,12 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         );
     }
 
-    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams memory params) external payable override {
+    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams calldata params) external payable {
         _transferERC20AndSwapToNative(params, payable(msg.sender), msg.value);
     }
 
     function _transferERC20AndSwapToNative(
-        TransferERC20AndSwapToNativeParams memory params,
+        TransferERC20AndSwapToNativeParams calldata params,
         address payable from,
         uint256 fee
     ) internal {
@@ -155,7 +155,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address token,
         uint256 amountLD,
         bytes calldata payload
-    ) external override {
+    ) external {
         if (msg.sender != router) revert Forbidden();
 
         address _srcAddress = address(bytes20(srcAddress[0:20]));
@@ -202,7 +202,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address srcFrom,
         address token,
         uint256 amountLD,
-        bytes memory params
+        bytes calldata params
     ) public {
         if (msg.sender != address(this)) revert Forbidden();
 
@@ -216,7 +216,7 @@ contract OmniDisperse is Ownable, IStargateReceiver, IOmniDisperse {
         address srcFrom,
         address token,
         uint256 amountLD,
-        bytes memory params
+        bytes calldata params
     ) internal {
         if (messageType == TYPE_SWAP_TO_NATIVE) {
             (bytes[] memory swapData, address[] memory recipients, uint256[] memory amounts) = abi.decode(

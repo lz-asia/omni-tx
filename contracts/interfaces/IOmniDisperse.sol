@@ -63,24 +63,24 @@ interface IOmniDisperse {
 
     function estimateFeeTransferERC20(
         uint16 dstChainId,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
         address from
     ) external view returns (uint256);
 
     function estimateFeeSwapToNative(
         uint16 dstChainId,
-        bytes[] memory swapData,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        bytes[] calldata swapData,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
         address from
     ) external view returns (uint256);
 
     function updateDstAddress(uint16 dstChainId, address _dstAddress) external;
 
-    function transferERC20(TransferERC20Params memory params) external payable;
+    function transferERC20(TransferERC20Params calldata params) external payable;
 
-    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams memory params) external payable;
+    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams calldata params) external payable;
 }
