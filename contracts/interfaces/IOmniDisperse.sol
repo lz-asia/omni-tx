@@ -6,13 +6,10 @@ interface IOmniDisperse {
     error DstChainNotFound(uint16 chainId);
     error PoolNotFound(uint256 poolId);
     error Forbidden();
-    error NoStoredMessage();
-    error InvalidPayload();
+    error LengthsAreNotEqual();
     error SwapFailure(bytes reason);
 
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
-    event UpdateToken(uint256 indexed poolId, address indexed token);
-    event TransferFailure(address indexed to, uint256 amount, bytes reason);
     event SGReceive(
         uint16 indexed srcChainId,
         bytes indexed srcAddress,
@@ -30,7 +27,7 @@ interface IOmniDisperse {
         uint256 amountLD,
         bytes32 paramsHash
     );
-    event MessageFailed(
+    event HandleMessageFailed(
         uint16 indexed srcChainId,
         address indexed srcAddress,
         address indexed srcFrom,
@@ -40,25 +37,17 @@ interface IOmniDisperse {
         bytes params,
         bytes reason
     );
-    event RetryMessageSuccess(
-        uint8 messageType,
-        uint16 indexed srcChainId,
-        address indexed srcAddress,
-        address indexed srcFrom,
-        uint256 nonce,
-        address token,
-        uint256 amountLD,
-        bytes32 paramsHash
-    );
 
     struct TransferERC20Params {
         uint256 poolId;
         uint256 amount;
         uint16 dstChainId;
         uint256 dstPoolId;
+        uint256 dstMinAmount;
         address[] dstRecipients;
         uint256[] dstAmounts;
         uint256 gas;
+        uint256 dstNativeAmount;
     }
 
     struct TransferERC20AndSwapToNativeParams {
@@ -71,43 +60,31 @@ interface IOmniDisperse {
         address[] dstRecipients;
         uint256[] dstAmounts;
         uint256 gas;
-    }
-
-    struct FailedMessage {
-        address token;
-        uint256 amountLD;
-        bytes32 paramsHash;
+        uint256 dstNativeAmount;
     }
 
     function estimateFeeTransferERC20(
         uint16 dstChainId,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256);
 
     function estimateFeeSwapToNative(
         uint16 dstChainId,
-        bytes[] memory swapData,
-        address[] memory dstRecipients,
-        uint256[] memory dstAmounts,
+        bytes[] calldata swapData,
+        address[] calldata dstRecipients,
+        uint256[] calldata dstAmounts,
         uint256 gas,
+        uint256 dstNativeAmount,
         address from
     ) external view returns (uint256);
 
     function updateDstAddress(uint16 dstChainId, address _dstAddress) external;
 
-    function transferERC20(TransferERC20Params memory params) external payable;
+    function transferERC20(TransferERC20Params calldata params) external payable;
 
-    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams memory params) external payable;
-
-    function retryMessage(
-        uint8 messageType,
-        uint16 srcChainId,
-        address srcAddress,
-        address srcFrom,
-        uint256 nonce,
-        bytes calldata params
-    ) external payable;
+    function transferERC20AndSwapToNative(TransferERC20AndSwapToNativeParams calldata params) external payable;
 }
