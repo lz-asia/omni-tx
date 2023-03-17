@@ -9,64 +9,82 @@ contract Disperse is IDisperse {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
+    mapping(address => mapping(address => uint256)) public balances;
+
     receive() external payable {}
 
-    function disperse(
+    function onReceiveERC20(
         address token,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external payable {
-        _disperse(token, recipients, amounts);
+        address to,
+        uint256 amount
+    ) external {
+        balances[token][to] += amount;
     }
 
-    function swapAndDisperse(
-        bytes[] calldata swapDataWithValue,
-        address token,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external payable {
-        uint256 length = swapDataWithValue.length;
-        for (uint256 i; i < length; ) {
-            (address to, bytes memory data, uint256 value) = abi.decode(
-                swapDataWithValue[i],
-                (address, bytes, uint256)
-            );
-            Address.functionCallWithValue(to, data, value);
+    function _sum(uint256[] calldata amounts) internal pure returns (uint256 amount) {
+        for (uint256 i; i < amounts.length; ) {
+            amount += amounts[i];
             unchecked {
                 ++i;
             }
         }
-        _disperse(token, recipients, amounts);
     }
 
-    function _disperse(
-        address token,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) internal {
-        uint256 length = recipients.length;
-        if (length != amounts.length) revert LengthsAreNotEqual();
+    function disperse(DisperseParams calldata params) external {
+        uint256 amount = _sum(params.amounts);
+        IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), amount);
 
-        if (token == address(0)) {
+        _disperse(params);
+    }
+
+    function disperseIntrinsic(DisperseParams calldata params) external {
+        uint256 amount = _sum(params.amounts);
+        if (amount < balances[params.tokenIn][msg.sender]) revert InsufficientBalance();
+        balances[params.tokenIn][msg.sender] -= amount;
+
+        uint256 balance = IERC20(params.tokenIn).balanceOf(address(this));
+        _disperse(params);
+        if (balance - IERC20(params.tokenIn).balanceOf(address(this)) > amount) revert Exploited();
+    }
+
+    function _disperse(DisperseParams calldata params) internal {
+        uint256 length = params.recipients.length;
+        if (length != params.amounts.length) revert InvalidParams();
+
+        if (params.swapData.length > 0) {
+            if (IERC20(params.tokenIn).allowance(address(this), params.swapTo) == 0) {
+                IERC20(params.tokenIn).approve(params.swapTo, type(uint256).max);
+            }
+            params.swapTo.call(params.swapData);
+        }
+
+        if (params.tokenOut == address(0)) {
             for (uint256 i; i < length; ) {
-                uint256 amount = amounts[i];
-                if (amount != 0) payable(recipients[i]).sendValue(amount);
+                uint256 amount = params.amounts[i];
+                if (amount > 0) {
+                    payable(params.recipients[i]).sendValue(amount);
+                }
                 unchecked {
                     ++i;
                 }
             }
-            uint256 amountRemained = address(this).balance;
-            if (amountRemained != 0) payable(msg.sender).sendValue(amountRemained);
         } else {
             for (uint256 i; i < length; ) {
-                uint256 amount = amounts[i];
-                if (amount != 0) IERC20(token).safeTransfer(recipients[i], amount);
+                uint256 amount = params.amounts[i];
+                if (amount > 0) {
+                    IERC20(params.tokenOut).safeTransfer(params.recipients[i], amount);
+                }
                 unchecked {
                     ++i;
                 }
             }
-            uint256 amountRemained = IERC20(token).balanceOf(address(this));
-            if (amountRemained != 0) IERC20(token).safeTransfer(msg.sender, amountRemained);
+            uint256 balance = IERC20(params.tokenOut).balanceOf(address(this));
+            if (balance > 0) IERC20(params.tokenOut).safeTransfer(params.refundAddress, balance);
+        }
+
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            payable(params.refundAddress).sendValue(balance);
         }
     }
 }

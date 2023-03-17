@@ -2,19 +2,24 @@
 
 pragma solidity ^0.8.0;
 
-interface IDisperse {
-    error LengthsAreNotEqual();
+import "./IStargateVault.sol";
 
-    function disperse(
-        address token,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external payable;
+interface IDisperse is IStargateVault {
+    error InsufficientBalance();
+    error InvalidParams();
+    error Exploited();
 
-    function swapAndDisperse(
-        bytes[] calldata swapDataWithValue,
-        address token,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external payable;
+    struct DisperseParams {
+        address tokenIn;
+        address tokenOut;
+        address swapTo;
+        bytes swapData;
+        address[] recipients;
+        uint256[] amounts;
+        address refundAddress;
+    }
+
+    function disperse(DisperseParams calldata params) external;
+
+    function disperseIntrinsic(DisperseParams calldata params) external;
 }
