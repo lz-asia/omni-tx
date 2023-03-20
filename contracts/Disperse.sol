@@ -64,6 +64,10 @@ contract Disperse is IDisperse {
         uint256 length = params.recipients.length;
         if (length != params.amounts.length) revert InvalidParams();
 
+        uint256 balanceTokenOut;
+        if (params.tokenOut != address(0)) {
+            balanceTokenOut = IERC20(params.tokenOut).balanceOf(address(this));
+        }
         if (params.swapData.length > 0) {
             if (IERC20(params.tokenIn).allowance(address(this), params.swapTo) == 0) {
                 IERC20(params.tokenIn).approve(params.swapTo, type(uint256).max);
@@ -92,7 +96,9 @@ contract Disperse is IDisperse {
                 }
             }
             uint256 balance = IERC20(params.tokenOut).balanceOf(address(this));
-            if (balance > 0) IERC20(params.tokenOut).safeTransfer(params.refundAddress, balance);
+            if (balance > balanceTokenOut) {
+                IERC20(params.tokenOut).safeTransfer(params.refundAddress, balance - balanceTokenOut);
+            }
         }
 
         uint256 balance = address(this).balance;
