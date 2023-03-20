@@ -18,6 +18,8 @@ contract Disperse is IDisperse {
         address to,
         uint256 amount
     ) external {
+        if (token == address(0)) revert InvalidToken();
+
         balances[token][to] += amount;
     }
 
@@ -30,6 +32,17 @@ contract Disperse is IDisperse {
         }
     }
 
+    function withdraw(
+        address token,
+        address to,
+        uint256 amount
+    ) external {
+        if (amount > balances[token][msg.sender]) revert InsufficientBalance();
+        balances[token][msg.sender] -= amount;
+
+        IERC20(token).safeTransfer(to, amount);
+    }
+
     function disperse(DisperseParams calldata params) external {
         uint256 amount = _sum(params.amounts);
         IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), amount);
@@ -39,7 +52,7 @@ contract Disperse is IDisperse {
 
     function disperseIntrinsic(DisperseParams calldata params) external {
         uint256 amount = _sum(params.amounts);
-        if (amount < balances[params.tokenIn][msg.sender]) revert InsufficientBalance();
+        if (amount > balances[params.tokenIn][msg.sender]) revert InsufficientBalance();
         balances[params.tokenIn][msg.sender] -= amount;
 
         uint256 balance = IERC20(params.tokenIn).balanceOf(address(this));

@@ -122,7 +122,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
             IERC20(token).safeTransfer(to, balance);
-            to.call(abi.encodeWithSelector(IStargateVault.onReceiveERC20.selector, srcFrom, token, balance));
+            to.call(abi.encodeWithSelector(IStargateVault.onReceiveERC20.selector, token, srcFrom, balance));
         }
 
         balance = address(this).balance;
