@@ -4,7 +4,7 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    await deploy("OmniDisperse", {
+    await deploy("StargateProxy", {
         from: deployer,
         args: [router[network.name]],
         log: true,
