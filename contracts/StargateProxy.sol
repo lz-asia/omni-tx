@@ -50,6 +50,11 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     }
 
     function transferNative(uint256 amount, TransferParams calldata params) external payable {
+        if (params.swapData.length > 20) {
+            (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
+            (bool ok, bytes memory reason) = to.call{value: amount}(data);
+            if (!ok) revert SwapFailure(reason);
+        }
         _transfer(params, payable(msg.sender), msg.value - amount);
     }
 
@@ -60,6 +65,14 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     ) external payable {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
+        if (params.swapData.length > 20) {
+            (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
+            if (IERC20(token).allowance(address(this), to) == 0) {
+                IERC20(token).approve(to, type(uint256).max);
+            }
+            (bool ok, bytes memory reason) = to.call(data);
+            if (!ok) revert SwapFailure(reason);
+        }
         _transfer(params, payable(msg.sender), msg.value);
     }
 
@@ -68,14 +81,6 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         address payable from,
         uint256 fee
     ) internal {
-        if (params.dstCallData.length < 20) revert InvalidDstSwapData();
-
-        if (params.swapData.length > 0) {
-            (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
-            (bool ok, bytes memory reason) = to.call(data);
-            if (!ok) revert SwapFailure(reason);
-        }
-
         address dst = dstAddress[params.dstChainId];
         if (dst == address(0)) revert DstChainNotFound(params.dstChainId);
 
