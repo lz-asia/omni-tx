@@ -9,7 +9,12 @@ contract Disperse is IDisperse {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
+    address public immutable sgProxy;
     mapping(address => mapping(address => uint256)) public balances;
+
+    constructor(address _sgProxy) {
+        sgProxy = _sgProxy;
+    }
 
     receive() external payable {}
 
@@ -18,6 +23,7 @@ contract Disperse is IDisperse {
         address to,
         uint256 amount
     ) external {
+        if (msg.sender != sgProxy) revert InvalidProxy();
         if (token == address(0)) revert InvalidToken();
 
         balances[token][to] += amount;
