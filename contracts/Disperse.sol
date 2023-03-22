@@ -29,6 +29,21 @@ contract Disperse is IDisperse {
         balances[token][to] += amount;
     }
 
+    function sgProxyReceive(bytes calldata data) external {
+        if (msg.sender != sgProxy) revert InvalidProxy();
+
+        DisperseParams memory params = abi.decode(data, (DisperseParams));
+        _disperse(
+            params.tokenIn,
+            params.tokenOut,
+            params.swapTo,
+            params.swapData,
+            params.recipients,
+            params.amounts,
+            params.refundAddress
+        );
+    }
+
     function _sum(uint256[] calldata amounts) internal pure returns (uint256 amount) {
         for (uint256 i; i < amounts.length; ) {
             amount += amounts[i];
@@ -53,7 +68,15 @@ contract Disperse is IDisperse {
         uint256 amount = _sum(params.amounts);
         IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), amount);
 
-        _disperse(params);
+        _disperse(
+            params.tokenIn,
+            params.tokenOut,
+            params.swapTo,
+            params.swapData,
+            params.recipients,
+            params.amounts,
+            params.refundAddress
+        );
     }
 
     function disperseIntrinsic(DisperseParams calldata params) external {
@@ -62,30 +85,46 @@ contract Disperse is IDisperse {
         balances[params.tokenIn][msg.sender] -= amount;
 
         uint256 balance = IERC20(params.tokenIn).balanceOf(address(this));
-        _disperse(params);
+        _disperse(
+            params.tokenIn,
+            params.tokenOut,
+            params.swapTo,
+            params.swapData,
+            params.recipients,
+            params.amounts,
+            params.refundAddress
+        );
         if (balance - IERC20(params.tokenIn).balanceOf(address(this)) > amount) revert Exploited();
     }
 
-    function _disperse(DisperseParams calldata params) internal {
-        uint256 length = params.recipients.length;
-        if (length != params.amounts.length) revert InvalidParams();
+    function _disperse(
+        address tokenIn,
+        address tokenOut,
+        address swapTo,
+        bytes memory swapData,
+        address[] memory recipients,
+        uint256[] memory amounts,
+        address refundAddress
+    ) internal {
+        uint256 length = recipients.length;
+        if (length != amounts.length) revert InvalidParams();
 
         uint256 balanceTokenOut;
-        if (params.tokenOut != address(0)) {
-            balanceTokenOut = IERC20(params.tokenOut).balanceOf(address(this));
+        if (tokenOut != address(0)) {
+            balanceTokenOut = IERC20(tokenOut).balanceOf(address(this));
         }
-        if (params.swapData.length > 0) {
-            if (IERC20(params.tokenIn).allowance(address(this), params.swapTo) == 0) {
-                IERC20(params.tokenIn).approve(params.swapTo, type(uint256).max);
+        if (swapData.length > 0) {
+            if (IERC20(tokenIn).allowance(address(this), swapTo) == 0) {
+                IERC20(tokenIn).approve(swapTo, type(uint256).max);
             }
-            params.swapTo.call(params.swapData);
+            swapTo.call(swapData);
         }
 
-        if (params.tokenOut == address(0)) {
+        if (tokenOut == address(0)) {
             for (uint256 i; i < length; ) {
-                uint256 amount = params.amounts[i];
+                uint256 amount = amounts[i];
                 if (amount > 0) {
-                    payable(params.recipients[i]).sendValue(amount);
+                    payable(recipients[i]).sendValue(amount);
                 }
                 unchecked {
                     ++i;
@@ -93,23 +132,23 @@ contract Disperse is IDisperse {
             }
         } else {
             for (uint256 i; i < length; ) {
-                uint256 amount = params.amounts[i];
+                uint256 amount = amounts[i];
                 if (amount > 0) {
-                    IERC20(params.tokenOut).safeTransfer(params.recipients[i], amount);
+                    IERC20(tokenOut).safeTransfer(recipients[i], amount);
                 }
                 unchecked {
                     ++i;
                 }
             }
-            uint256 balance = IERC20(params.tokenOut).balanceOf(address(this));
+            uint256 balance = IERC20(tokenOut).balanceOf(address(this));
             if (balance > balanceTokenOut) {
-                IERC20(params.tokenOut).safeTransfer(params.refundAddress, balance - balanceTokenOut);
+                IERC20(tokenOut).safeTransfer(refundAddress, balance - balanceTokenOut);
             }
         }
 
         uint256 balance = address(this).balance;
         if (balance > 0) {
-            payable(params.refundAddress).sendValue(balance);
+            payable(refundAddress).sendValue(balance);
         }
     }
 }

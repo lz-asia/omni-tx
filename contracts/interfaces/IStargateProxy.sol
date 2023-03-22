@@ -7,6 +7,7 @@ interface IStargateProxy {
     error DstChainNotFound(uint16 chainId);
     error PoolNotFound(uint256 poolId);
     error Forbidden();
+    error InvalidPayload();
 
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
     event CallFailure(address to, bytes data, bytes reason);

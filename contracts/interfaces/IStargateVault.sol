@@ -12,4 +12,6 @@ interface IStargateVault {
         address to,
         uint256 amount
     ) external;
+
+    function sgProxyReceive(bytes calldata data) external;
 }
