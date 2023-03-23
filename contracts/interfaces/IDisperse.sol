@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IStargateVault.sol";
+import "./IStargateProxyReceiver.sol";
 
-interface IDisperse is IStargateVault {
+interface IDisperse is IStargateProxyReceiver {
     error InvalidToken();
     error InsufficientBalance();
     error InvalidParams();

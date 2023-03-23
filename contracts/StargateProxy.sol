@@ -9,7 +9,7 @@ import "./interfaces/IStargateProxy.sol";
 import "./interfaces/IStargateRouter.sol";
 import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargatePool.sol";
-import "./interfaces/IStargateVault.sol";
+import "./interfaces/IStargateProxyReceiver.sol";
 
 contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     using SafeERC20 for IERC20;
@@ -120,8 +120,10 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             (address sgVault, bytes memory data) = abi.decode(payload[20:], (address, bytes));
             tokenRefundAddress = sgVault;
             IERC20(token).safeTransfer(sgVault, amountLD);
-            try IStargateVault(sgVault).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (bytes memory reason) {
-                try IStargateVault(sgVault).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
+            try IStargateProxyReceiver(sgVault).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (
+                bytes memory reason
+            ) {
+                try IStargateProxyReceiver(sgVault).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
                 emit CallFailure(sgVault, data, reason);
             }
         }
@@ -130,7 +132,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         if (balance > 0) {
             IERC20(token).safeTransfer(tokenRefundAddress, balance);
             if (tokenRefundAddress != srcFrom)
-                try IStargateVault(tokenRefundAddress).onReceiveERC20(token, srcFrom, balance) {} catch {}
+                try IStargateProxyReceiver(tokenRefundAddress).onReceiveERC20(token, srcFrom, balance) {} catch {}
         }
 
         balance = address(this).balance;
