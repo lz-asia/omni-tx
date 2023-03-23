@@ -115,24 +115,27 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         if (msg.sender != router) revert Forbidden();
 
         address srcFrom = address(bytes20(payload[0:20]));
-        (address to, bytes memory data) = abi.decode(payload[20:], (address, bytes));
-        if (IERC20(token).allowance(address(this), to) == 0) {
-            IERC20(token).approve(to, type(uint256).max);
-        }
-        {
-            (bool ok, bytes memory reason) = to.call(data);
-            if (!ok) emit CallFailure(to, data, reason);
+        address tokenRefundAddress = srcFrom;
+        if (payload.length != 20) {
+            (address sgVault, bytes memory data) = abi.decode(payload[20:], (address, bytes));
+            tokenRefundAddress = sgVault;
+            IERC20(token).safeTransfer(sgVault, amountLD);
+            try IStargateVault(sgVault).sgProxyReceive(data) {} catch (bytes memory reason) {
+                try IStargateVault(sgVault).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
+                emit CallFailure(sgVault, data, reason);
+            }
         }
 
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
-            IERC20(token).safeTransfer(to, balance);
-            to.call(abi.encodeWithSelector(IStargateVault.onReceiveERC20.selector, token, srcFrom, balance));
+            IERC20(token).safeTransfer(tokenRefundAddress, balance);
+            if (tokenRefundAddress != srcFrom)
+                try IStargateVault(tokenRefundAddress).onReceiveERC20(token, srcFrom, balance) {} catch {}
         }
 
         balance = address(this).balance;
         if (balance > 0) {
-            payable(srcFrom).sendValue(balance);
+            srcFrom.call{value: balance}("");
         }
 
         emit SGReceive(srcChainId, srcAddress, nonce, token, amountLD, payload);
