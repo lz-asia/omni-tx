@@ -10,6 +10,7 @@ import "./interfaces/IStargateRouter.sol";
 import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargatePool.sol";
 import "./interfaces/IStargateProxyReceiver.sol";
+import "./libraries/SwapUtils.sol";
 
 contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     using SafeERC20 for IERC20;
@@ -52,8 +53,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     function transferNative(uint256 amount, TransferParams calldata params) external payable {
         if (params.swapData.length > 20) {
             (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
-            (bool ok, bytes memory reason) = to.call{value: amount}(data);
-            if (!ok) revert SwapFailure(reason);
+            SwapUtils.swapNative(params.amount, to, data, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value - amount);
     }
@@ -67,11 +67,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
 
         if (params.swapData.length > 20) {
             (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
-            if (IERC20(token).allowance(address(this), to) == 0) {
-                IERC20(token).approve(to, type(uint256).max);
-            }
-            (bool ok, bytes memory reason) = to.call(data);
-            if (!ok) revert SwapFailure(reason);
+            SwapUtils.swapERC20(token, params.amount, to, data, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value);
     }
@@ -117,22 +113,23 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         address srcFrom = address(bytes20(payload[0:20]));
         address tokenRefundAddress = srcFrom;
         if (payload.length != 20) {
-            (address sgVault, bytes memory data) = abi.decode(payload[20:], (address, bytes));
-            tokenRefundAddress = sgVault;
-            IERC20(token).safeTransfer(sgVault, amountLD);
-            try IStargateProxyReceiver(sgVault).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (
+            (address receiver, bytes memory data) = abi.decode(payload[20:], (address, bytes));
+            tokenRefundAddress = receiver;
+            IERC20(token).safeTransfer(receiver, amountLD);
+            try IStargateProxyReceiver(receiver).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (
                 bytes memory reason
             ) {
-                try IStargateProxyReceiver(sgVault).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
-                emit CallFailure(sgVault, data, reason);
+                try IStargateProxyReceiver(receiver).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
+                emit CallFailure(receiver, data, reason);
             }
         }
 
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
             IERC20(token).safeTransfer(tokenRefundAddress, balance);
-            if (tokenRefundAddress != srcFrom)
+            if (tokenRefundAddress != srcFrom) {
                 try IStargateProxyReceiver(tokenRefundAddress).onReceiveERC20(token, srcFrom, balance) {} catch {}
+            }
         }
 
         balance = address(this).balance;
