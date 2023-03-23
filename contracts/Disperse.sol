@@ -27,30 +27,32 @@ contract Disperse is IDisperse {
         if (token == address(0)) revert InvalidToken();
 
         balances[token][to] += amount;
+
+        emit OnReceiveERC20(token, to, amount);
     }
 
-    function sgProxyReceive(bytes calldata data) external {
+    function sgProxyReceive(
+        address srcFrom,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external {
         if (msg.sender != sgProxy) revert InvalidProxy();
 
-        DisperseParams memory params = abi.decode(data, (DisperseParams));
-        _disperse(
-            params.tokenIn,
-            params.tokenOut,
-            params.swapTo,
-            params.swapData,
-            params.recipients,
-            params.amounts,
-            params.refundAddress
-        );
-    }
+        (
+            address tokenOut,
+            address swapTo,
+            bytes memory swapData,
+            address[] memory recipients,
+            uint256[] memory amounts,
+            address refundAddress
+        ) = abi.decode(data, (address, address, bytes, address[], uint256[], address));
 
-    function _sum(uint256[] calldata amounts) internal pure returns (uint256 amount) {
-        for (uint256 i; i < amounts.length; ) {
-            amount += amounts[i];
-            unchecked {
-                ++i;
-            }
-        }
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        _disperse(token, tokenOut, swapTo, swapData, recipients, amounts, refundAddress);
+        if (balance - IERC20(token).balanceOf(address(this)) > amount) revert Exploited();
+
+        emit SgProxyReceive(srcFrom, token, amount, data);
     }
 
     function withdraw(
@@ -62,11 +64,12 @@ contract Disperse is IDisperse {
         balances[token][msg.sender] -= amount;
 
         IERC20(token).safeTransfer(to, amount);
+
+        emit Withdraw(token, to, amount);
     }
 
     function disperse(DisperseParams calldata params) external {
-        uint256 amount = _sum(params.amounts);
-        IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), params.amountIn);
 
         _disperse(
             params.tokenIn,
@@ -77,12 +80,12 @@ contract Disperse is IDisperse {
             params.amounts,
             params.refundAddress
         );
+        // TODO: refund unspent tokenIn out of amountIn
     }
 
     function disperseIntrinsic(DisperseParams calldata params) external {
-        uint256 amount = _sum(params.amounts);
-        if (amount > balances[params.tokenIn][msg.sender]) revert InsufficientBalance();
-        balances[params.tokenIn][msg.sender] -= amount;
+        if (params.amountIn > balances[params.tokenIn][msg.sender]) revert InsufficientBalance();
+        balances[params.tokenIn][msg.sender] -= params.amountIn;
 
         uint256 balance = IERC20(params.tokenIn).balanceOf(address(this));
         _disperse(
@@ -94,7 +97,7 @@ contract Disperse is IDisperse {
             params.amounts,
             params.refundAddress
         );
-        if (balance - IERC20(params.tokenIn).balanceOf(address(this)) > amount) revert Exploited();
+        if (balance - IERC20(params.tokenIn).balanceOf(address(this)) > params.amountIn) revert Exploited();
     }
 
     function _disperse(
@@ -114,6 +117,7 @@ contract Disperse is IDisperse {
             balanceTokenOut = IERC20(tokenOut).balanceOf(address(this));
         }
         if (swapData.length > 0) {
+            // TODO: swapTo can drain tokens other than tokenIn or tokenOut
             if (IERC20(tokenIn).allowance(address(this), swapTo) == 0) {
                 IERC20(tokenIn).approve(swapTo, type(uint256).max);
             }

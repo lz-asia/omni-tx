@@ -120,7 +120,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             (address sgVault, bytes memory data) = abi.decode(payload[20:], (address, bytes));
             tokenRefundAddress = sgVault;
             IERC20(token).safeTransfer(sgVault, amountLD);
-            try IStargateVault(sgVault).sgProxyReceive(data) {} catch (bytes memory reason) {
+            try IStargateVault(sgVault).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (bytes memory reason) {
                 try IStargateVault(sgVault).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
                 emit CallFailure(sgVault, data, reason);
             }

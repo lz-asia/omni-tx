@@ -2,16 +2,19 @@
 
 pragma solidity ^0.8.0;
 
-interface IStargateVault {
+import "./IERC20Receiver.sol";
+
+interface IStargateVault is IERC20Receiver {
     error InvalidProxy();
+
+    event SgProxyReceive(address indexed srcFrom, address indexed token, uint256 amount, bytes data);
 
     function sgProxy() external view returns (address);
 
-    function onReceiveERC20(
+    function sgProxyReceive(
+        address srcFrom,
         address token,
-        address to,
-        uint256 amount
+        uint256 amount,
+        bytes calldata data
     ) external;
-
-    function sgProxyReceive(bytes calldata data) external;
 }

@@ -10,7 +10,11 @@ interface IDisperse is IStargateVault {
     error InvalidParams();
     error Exploited();
 
+    event Disperse(address indexed token, address[] recipients, uint256[] amounts);
+    event Withdraw(address indexed token, address indexed to, uint256 amount);
+
     struct DisperseParams {
+        uint256 amountIn;
         address tokenIn;
         address tokenOut;
         address swapTo;
