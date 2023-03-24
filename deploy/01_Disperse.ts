@@ -1,10 +1,12 @@
 module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { deploy } = deployments;
+    const { deploy, get } = deployments;
     const { deployer } = await getNamedAccounts();
+
+    const proxy = await get("StargateProxy");
 
     await deploy("Disperse", {
         from: deployer,
-        args: [],
+        args: [proxy.address],
         log: true,
     });
 };
