@@ -2,30 +2,22 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IDisperse.sol";
 import "./libraries/SwapUtils.sol";
 
-contract Disperse is Ownable, IDisperse {
+contract Disperse is IDisperse {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
     address public immutable sgProxy;
     mapping(address => mapping(address => uint256)) public balances;
-    mapping(address => bool) public isCallable;
 
     constructor(address _sgProxy) {
         sgProxy = _sgProxy;
     }
 
     receive() external payable {}
-
-    function updateCallable(address addr, bool callable) external onlyOwner {
-        isCallable[addr] = callable;
-
-        emit UpdateCallable(addr, callable);
-    }
 
     function onReceiveERC20(
         address token,
@@ -53,11 +45,10 @@ contract Disperse is Ownable, IDisperse {
             address swapTo,
             bytes memory swapData,
             address[] memory recipients,
-            uint256[] memory amounts,
-            address refundAddress
-        ) = abi.decode(data, (address, address, bytes, address[], uint256[], address));
+            uint256[] memory amounts
+        ) = abi.decode(data, (address, address, bytes, address[], uint256[]));
 
-        _disperse(amount, token, tokenOut, swapTo, swapData, recipients, amounts, refundAddress);
+        _disperse(token, amount, tokenOut, swapTo, swapData, recipients, amounts, srcFrom);
 
         emit SgProxyReceive(srcFrom, token, amount, data);
     }
@@ -79,14 +70,14 @@ contract Disperse is Ownable, IDisperse {
         IERC20(params.tokenIn).safeTransferFrom(msg.sender, address(this), params.amountIn);
 
         _disperse(
-            params.amountIn,
             params.tokenIn,
+            params.amountIn,
             params.tokenOut,
             params.swapTo,
             params.swapData,
             params.recipients,
             params.amounts,
-            params.refundAddress
+            msg.sender
         );
     }
 
@@ -95,20 +86,20 @@ contract Disperse is Ownable, IDisperse {
         balances[params.tokenIn][msg.sender] -= params.amountIn;
 
         _disperse(
-            params.amountIn,
             params.tokenIn,
+            params.amountIn,
             params.tokenOut,
             params.swapTo,
             params.swapData,
             params.recipients,
             params.amounts,
-            params.refundAddress
+            msg.sender
         );
     }
 
     function _disperse(
-        uint256 amountIn,
         address tokenIn,
+        uint256 amountIn,
         address tokenOut,
         address swapTo,
         bytes memory swapData,
@@ -119,8 +110,7 @@ contract Disperse is Ownable, IDisperse {
         uint256 length = recipients.length;
         if (length != amounts.length) revert InvalidParams();
 
-        if (swapData.length > 0) {
-            if (!isCallable[swapTo]) revert InvalidSwapData();
+        if (swapTo != address(0)) {
             SwapUtils.swapERC20(tokenIn, amountIn, swapTo, swapData, tokenIn != tokenOut, refundAddress);
         }
 

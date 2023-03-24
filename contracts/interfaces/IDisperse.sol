@@ -10,7 +10,6 @@ interface IDisperse is IStargateProxyReceiver {
     error InvalidParams();
     error InvalidSwapData();
 
-    event UpdateCallable(address indexed addr, bool callable);
     event Disperse(address indexed token, address[] recipients, uint256[] amounts);
     event Withdraw(address indexed token, address indexed to, uint256 amount);
 
@@ -24,8 +23,6 @@ interface IDisperse is IStargateProxyReceiver {
         uint256[] amounts;
         address refundAddress;
     }
-
-    function isCallable(address addr) external view returns (bool);
 
     function withdraw(
         address token,
