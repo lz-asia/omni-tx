@@ -27,6 +27,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
 
     function estimateFee(
         uint16 dstChainId,
+        address dstCallTo,
         bytes calldata dstCallData,
         uint256 dstGasForCall,
         uint256 dstNativeAmount,
@@ -39,7 +40,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             dstChainId,
             1, /*TYPE_SWAP_REMOTE*/
             abi.encodePacked(dst),
-            abi.encodePacked(from, dstCallData),
+            abi.encodePacked(from, dstCallTo, dstCallData),
             IStargateRouter.lzTxObj(dstGasForCall, dstNativeAmount, abi.encodePacked(from))
         );
         return fee;
@@ -51,9 +52,8 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     }
 
     function transferNative(uint256 amount, TransferParams calldata params) external payable {
-        if (params.swapData.length > 20) {
-            (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
-            SwapUtils.swapNative(params.amount, to, data, true, msg.sender);
+        if (params.swapTo != address(0)) {
+            SwapUtils.swapNative(params.amount, params.swapTo, params.swapData, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value - amount);
     }
@@ -65,9 +65,8 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     ) external payable {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        if (params.swapData.length > 20) {
-            (address to, bytes memory data) = abi.decode(params.swapData, (address, bytes));
-            SwapUtils.swapERC20(token, params.amount, to, data, true, msg.sender);
+        if (params.swapTo != address(0)) {
+            SwapUtils.swapERC20(token, params.amount, params.swapTo, params.swapData, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value);
     }
@@ -94,7 +93,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             params.dstMinAmount,
             IStargateRouter.lzTxObj(params.dstGasForCall, params.dstNativeAmount, abi.encodePacked(from)),
             abi.encodePacked(dst),
-            abi.encodePacked(from, params.dstCallData)
+            abi.encodePacked(from, params.dstCallTo, params.dstCallData)
         );
     }
 
@@ -111,24 +110,22 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         if (msg.sender != router) revert Forbidden();
 
         address srcFrom = address(bytes20(payload[0:20]));
-        address tokenRefundAddress = srcFrom;
-        if (payload.length != 20) {
-            (address receiver, bytes memory data) = abi.decode(payload[20:], (address, bytes));
-            tokenRefundAddress = receiver;
-            IERC20(token).safeTransfer(receiver, amountLD);
-            try IStargateProxyReceiver(receiver).sgProxyReceive(srcFrom, token, amountLD, data) {} catch (
+        address to = address(bytes20(payload[20:40]));
+        if (to != address(0)) {
+            IERC20(token).safeTransfer(to, amountLD);
+            try IStargateProxyReceiver(to).sgProxyReceive(srcFrom, token, amountLD, payload[40:]) {} catch (
                 bytes memory reason
             ) {
-                try IStargateProxyReceiver(receiver).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
-                emit CallFailure(receiver, data, reason);
+                try IStargateProxyReceiver(to).onReceiveERC20(token, srcFrom, amountLD) {} catch {}
+                emit CallFailure(srcFrom, to, payload[40:], reason);
             }
         }
 
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
-            IERC20(token).safeTransfer(tokenRefundAddress, balance);
-            if (tokenRefundAddress != srcFrom) {
-                try IStargateProxyReceiver(tokenRefundAddress).onReceiveERC20(token, srcFrom, balance) {} catch {}
+            IERC20(token).safeTransfer(to == address(0) ? srcFrom : to, balance);
+            if (to != address(0)) {
+                try IStargateProxyReceiver(to).onReceiveERC20(token, srcFrom, balance) {} catch {}
             }
         }
 

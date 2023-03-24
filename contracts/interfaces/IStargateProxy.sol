@@ -10,7 +10,7 @@ interface IStargateProxy {
     error InvalidPayload();
 
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
-    event CallFailure(address to, bytes data, bytes reason);
+    event CallFailure(address indexed srcFrom, address indexed to, bytes data, bytes reason);
     event SGReceive(
         uint16 indexed srcChainId,
         bytes indexed srcAddress,
@@ -21,12 +21,14 @@ interface IStargateProxy {
     );
 
     struct TransferParams {
+        address swapTo;
         bytes swapData;
         uint256 poolId;
         uint256 amount;
         uint16 dstChainId;
         uint256 dstPoolId;
         uint256 dstMinAmount;
+        address dstCallTo;
         bytes dstCallData;
         uint256 dstGasForCall;
         uint256 dstNativeAmount;
@@ -34,6 +36,7 @@ interface IStargateProxy {
 
     function estimateFee(
         uint16 dstChainId,
+        address dstCallTo,
         bytes calldata dstCallData,
         uint256 dstGasForCall,
         uint256 dstNativeAmount,
