@@ -176,7 +176,7 @@ const config: HardhatUserConfig = {
             tags: ["staging"],
         },
         fantom: {
-            url: `https://rpc.testnet.fantom.network/`,
+            url: `https://rpc.ankr.com/fantom`,
             accounts,
             chainId: 250,
             live: true,
