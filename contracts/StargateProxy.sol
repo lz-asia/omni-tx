@@ -53,7 +53,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
 
     function transferNative(uint256 amount, TransferParams calldata params) external payable {
         if (params.swapTo != address(0)) {
-            SwapUtils.swapNative(params.amount, params.swapTo, params.swapData, true, msg.sender);
+            SwapUtils.swapNative(amount, params.swapTo, params.swapData, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value - amount);
     }
@@ -66,7 +66,7 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         if (params.swapTo != address(0)) {
-            SwapUtils.swapERC20(token, params.amount, params.swapTo, params.swapData, true, msg.sender);
+            SwapUtils.swapERC20(token, amount, params.swapTo, params.swapData, true, msg.sender);
         }
         _transfer(params, payable(msg.sender), msg.value);
     }
@@ -95,6 +95,11 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             abi.encodePacked(dst),
             abi.encodePacked(from, params.dstCallTo, params.dstCallData)
         );
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            IERC20(token).safeTransfer(msg.sender, balance);
+        }
     }
 
     //---------------------------------------------------------------------------
