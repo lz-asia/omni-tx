@@ -12,19 +12,10 @@ library SwapUtils {
     function swapNative(
         uint256 amount,
         address to,
-        bytes memory data,
-        bool sweep,
-        address refundAddress
+        bytes memory data
     ) internal {
         (bool ok, bytes memory reason) = to.call{value: amount}(data);
         if (!ok) revert SwapFailure(reason);
-
-        if (sweep) {
-            uint256 balance = address(this).balance;
-            if (balance > 0) {
-                payable(refundAddress).sendValue(balance);
-            }
-        }
     }
 
     function swapERC20(

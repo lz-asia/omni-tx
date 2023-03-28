@@ -53,9 +53,14 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
 
     function transferNative(uint256 amount, TransferParams calldata params) external payable {
         if (params.swapTo != address(0)) {
-            SwapUtils.swapNative(amount, params.swapTo, params.swapData, true, msg.sender);
+            SwapUtils.swapNative(amount, params.swapTo, params.swapData);
         }
         _transfer(params, payable(msg.sender), msg.value - amount);
+
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            payable(msg.sender).sendValue(balance);
+        }
     }
 
     function transferERC20(
