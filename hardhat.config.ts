@@ -41,7 +41,15 @@ const config: HardhatUserConfig = {
         exclude: ["hardhat/"],
     },
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY,
+        apiKey: {
+            mainnet: process.env.ETHERSCAN_API_KEY,
+            arbitrumOne: process.env.ARBISCAN_API_KEY,
+            optimisticEthereum: process.env.OPTIMISM_ETHERSCAN_API_KEY,
+            bsc: process.env.BSCSCAN_API_KEY,
+            polygon: process.env.POLYGONSCAN_API_KEY,
+            avalanche: process.env.SNOWTRACE_API_KEY,
+            opera: process.env.FTMSCAN_API_KEY,
+        },
     },
     gasReporter: {
         coinmarketcap: process.env.COINMARKETCAP_API_KEY,
