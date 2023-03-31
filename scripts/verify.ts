@@ -5,16 +5,24 @@ async function main() {
     const { get } = deployments;
 
     const stargateProxy = await get("StargateProxy");
-    await run("verify:verify", {
-        address: stargateProxy.address,
-        constructorArguments: [router[network.name]],
-    });
+    try {
+        await run("verify:verify", {
+            address: stargateProxy.address,
+            constructorArguments: [router[network.name]],
+        });
+    } catch (e) {
+        console.error(e.message);
+    }
 
     const disperse = await get("Disperse");
-    await run("verify:verify", {
-        address: disperse.address,
-        constructorArguments: [stargateProxy.address],
-    });
+    try {
+        await run("verify:verify", {
+            address: disperse.address,
+            constructorArguments: [stargateProxy.address],
+        });
+    } catch (e) {
+        console.error(e.message);
+    }
 }
 
 main().catch(error => {

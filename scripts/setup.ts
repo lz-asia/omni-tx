@@ -3,6 +3,7 @@ import { ethers, network } from "hardhat";
 import chainIds from "../constants/chainIds.json";
 import { mainnet, testnet } from "../constants/networks.json";
 import { StargateProxy } from "../typechain-types";
+import { utils } from "ethers";
 
 function getStargateProxyAddress(network) {
     const { address } = JSON.parse(
@@ -16,8 +17,14 @@ async function setup(networks) {
     for (const networkName of networks) {
         if (networkName == network.name) continue;
         if (fs.existsSync("deployments/" + networkName)) {
-            console.log("updating dst address for " + networkName);
-            await proxy.updateDstAddress(chainIds[networkName], getStargateProxyAddress(networkName));
+            const addr = utils.getAddress(await proxy.dstAddress(chainIds[networkName]));
+            const dstProxy = utils.getAddress(getStargateProxyAddress(networkName));
+            if (addr == dstProxy) {
+                console.log("reusing dst address for " + networkName);
+            } else {
+                console.log("updating dst address for " + networkName);
+                await proxy.updateDstAddress(chainIds[networkName], dstProxy);
+            }
         }
     }
 }
