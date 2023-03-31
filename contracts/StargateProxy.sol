@@ -109,6 +109,23 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
 
     //---------------------------------------------------------------------------
     // RECEIVER FUNCTIONS
+    function estimateGas(
+        address swapTo,
+        bytes calldata swapData,
+        uint16 srcChainId,
+        bytes calldata srcAddress,
+        uint256 nonce,
+        address token,
+        uint256 amountLD,
+        bytes calldata payload
+    ) external payable returns (uint256 gasSpent) {
+        SwapUtils.swapNative(msg.value, swapTo, swapData);
+
+        uint256 gas = gasleft();
+        _sgReceive(srcChainId, srcAddress, nonce, token, amountLD, payload);
+        return gas - gasleft();
+    }
+
     function sgReceive(
         uint16 srcChainId,
         bytes calldata srcAddress,
@@ -119,6 +136,17 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
     ) external {
         if (msg.sender != router) revert Forbidden();
 
+        _sgReceive(srcChainId, srcAddress, nonce, token, amountLD, payload);
+    }
+
+    function _sgReceive(
+        uint16 srcChainId,
+        bytes calldata srcAddress,
+        uint256 nonce,
+        address token,
+        uint256 amountLD,
+        bytes calldata payload
+    ) internal {
         address srcFrom = address(bytes20(payload[0:20]));
         address to = address(bytes20(payload[20:40]));
         if (to != address(0)) {
@@ -144,6 +172,6 @@ contract StargateProxy is Ownable, IStargateReceiver, IStargateProxy {
             srcFrom.call{value: balance}("");
         }
 
-        emit SGReceive(srcChainId, srcAddress, nonce, token, amountLD, payload);
+        emit SGReceive(srcChainId, srcAddress, nonce, token, amountLD);
     }
 }

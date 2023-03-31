@@ -16,8 +16,7 @@ interface IStargateProxy {
         bytes indexed srcAddress,
         uint256 indexed nonce,
         address token,
-        uint256 amountLD,
-        bytes payload
+        uint256 amountLD
     );
 
     struct TransferParams {
