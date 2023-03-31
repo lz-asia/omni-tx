@@ -49,6 +49,13 @@ const config: HardhatUserConfig = {
             polygon: process.env.POLYGONSCAN_API_KEY,
             avalanche: process.env.SNOWTRACE_API_KEY,
             opera: process.env.FTMSCAN_API_KEY,
+            goerli: process.env.ETHERSCAN_API_KEY,
+            arbitrumGoerli: process.env.ARBISCAN_API_KEY,
+            optimisticGoerli: process.env.OPTIMISM_ETHERSCAN_API_KEY,
+            bscTestnet: process.env.BSCSCAN_API_KEY,
+            polygonMumbai: process.env.POLYGONSCAN_API_KEY,
+            avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
+            ftmTestnet: process.env.FTMSCAN_API_KEY,
         },
     },
     gasReporter: {
