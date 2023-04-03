@@ -2,27 +2,27 @@
 
 pragma solidity ^0.8.0;
 
-import "./IStargateProxyReceiver.sol";
+import "./IOmniTxReceiver.sol";
 
-interface IDisperse is IStargateProxyReceiver {
-    error InvalidToken();
+interface IDisperse is IOmniTxReceiver {
     error InsufficientBalance();
     error InvalidParams();
-    error InvalidSwapData();
 
     event Disperse(address indexed token, address[] recipients, uint256[] amounts);
     event Withdraw(address indexed token, address indexed to, uint256 amount);
 
     struct DisperseParams {
-        uint256 amountIn;
-        address tokenIn;
-        address tokenOut;
-        address swapTo;
-        bytes swapData;
+        address token;
         address[] recipients;
         uint256[] amounts;
         address refundAddress;
     }
+
+    function omniTx() external view returns (address);
+
+    function balances(address token, address account) external view returns (uint256);
+
+    receive() external payable;
 
     function withdraw(
         address token,
@@ -30,7 +30,17 @@ interface IDisperse is IStargateProxyReceiver {
         uint256 amount
     ) external;
 
-    function disperse(DisperseParams calldata params) external;
+    function disperse(
+        address token,
+        uint256 amount,
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external;
 
-    function disperseIntrinsic(DisperseParams calldata params) external;
+    function disperseIntrinsic(
+        address token,
+        uint256 amount,
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external;
 }
