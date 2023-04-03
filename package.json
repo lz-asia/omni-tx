@@ -83,6 +83,6 @@
   },
   "dependencies": {
     "@lz-asia/stargate": "^1.0.0",
-    "@openzeppelin/contracts": "^4.8.1"
+    "@openzeppelin/contracts": "^4.8.2"
   }
 }
