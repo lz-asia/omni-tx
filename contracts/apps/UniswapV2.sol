@@ -17,7 +17,11 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
     uint8 private constant SWAP_EXACT_ETH_FOR_TOKENS = 3;
     uint8 private constant SWAP_TOKENS_FOR_EXACT_ETH = 4;
 
-    constructor(address _omniTx) ERC20Vault(_omniTx) {}
+    address public immutable router;
+
+    constructor(address _omniTx, address _router) ERC20Vault(_omniTx) {
+        router = _router;
+    }
 
     function otReceive(
         address srcFrom,
@@ -32,23 +36,33 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
     }
 
+    function swap(
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external {
+        if (amount > balances[token][msg.sender]) revert InsufficientBalance();
+        balances[token][msg.sender] -= amount;
+
+        _swap(token, amount, data, msg.sender);
+    }
+
     function _swap(
         address tokenIn,
         uint256 amountIn,
         bytes calldata data,
         address refundAddress
     ) internal returns (address tokenOut, uint256 amountOut) {
-        address router = address(bytes20(data[0:20]));
-        uint8 action = uint8(bytes1(data[20:21]));
         IERC20(tokenIn).approve(router, amountIn);
+        uint8 action = uint8(bytes1(data[20:21]));
         if (action == SWAP_EXACT_TOKENS_FOR_TOKENS) {
-            (tokenOut, amountOut) = _swapExactTokensForTokens(tokenIn, amountIn, router, data[21:]);
+            (tokenOut, amountOut) = _swapExactTokensForTokens(tokenIn, amountIn, data[21:]);
         } else if (action == SWAP_TOKENS_FOR_EXACT_TOKENS) {
-            (tokenOut, amountOut) = _swapTokensForExactTokens(tokenIn, amountIn, router, data[21:]);
+            (tokenOut, amountOut) = _swapTokensForExactTokens(tokenIn, amountIn, data[21:]);
         } else if (action == SWAP_EXACT_ETH_FOR_TOKENS) {
-            (tokenOut, amountOut) = _swapExactETHForTokens(tokenIn, amountIn, router, data[21:]);
+            (tokenOut, amountOut) = _swapExactETHForTokens(tokenIn, amountIn, data[21:]);
         } else if (action == SWAP_TOKENS_FOR_EXACT_ETH) {
-            (tokenOut, amountOut) = _swapTokensForExactETH(tokenIn, amountIn, router, data[21:]);
+            (tokenOut, amountOut) = _swapTokensForExactETH(tokenIn, amountIn, data[21:]);
         } else revert InvalidAction(action);
         IERC20(tokenIn).approve(router, 0);
 
@@ -59,7 +73,6 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
     function _swapExactTokensForTokens(
         address tokenIn,
         uint256 amountIn,
-        address router,
         bytes memory args
     ) internal returns (address, uint256) {
         (uint256 amountOutMin, address[] memory path, uint256 deadline) = abi.decode(
@@ -81,7 +94,6 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
     function _swapTokensForExactTokens(
         address tokenIn,
         uint256 amountIn,
-        address router,
         bytes memory args
     ) internal returns (address, uint256) {
         (uint256 amountOut, address[] memory path, uint256 deadline) = abi.decode(args, (uint256, address[], uint256));
@@ -94,7 +106,6 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
     function _swapExactETHForTokens(
         address tokenIn,
         uint256 amountIn,
-        address router,
         bytes memory args
     ) internal returns (address, uint256) {
         (uint256 amountOutMin, address[] memory path, uint256 deadline) = abi.decode(
@@ -115,10 +126,9 @@ contract UniswapV2 is ERC20Vault, IUniswapV2 {
     function _swapTokensForExactETH(
         address tokenIn,
         uint256 amountIn,
-        address router,
         bytes memory args
     ) internal returns (address, uint256) {
-        (, uint256 amountOut) = _swapTokensForExactTokens(tokenIn, amountIn, router, args);
+        (, uint256 amountOut) = _swapTokensForExactTokens(tokenIn, amountIn, args);
         return (address(0), amountOut);
     }
 }
