@@ -182,10 +182,10 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
         for (uint256 i; i < receivers.length; ) {
             address to = receivers[i];
-            if (tokenIn != address(0)) {
+            bool native = tokenIn == address(0);
+            if (!native) {
                 IERC20(tokenIn).safeTransfer(to, amountIn);
             }
-            bool native = tokenIn == address(0);
             try IOmniTxReceiver(to).otReceive{value: native ? amountIn : 0}(from, tokenIn, amountIn, data[i]) returns (
                 address tokenOut,
                 uint256 amountOut
