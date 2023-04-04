@@ -50,6 +50,8 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         return fee;
     }
 
+    receive() external payable {}
+
     function updateWallet(address _wallet) external onlyOwner {
         wallet = _wallet;
         emit UpdateWallet(_wallet);

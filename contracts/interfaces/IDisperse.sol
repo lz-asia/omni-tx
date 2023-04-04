@@ -16,8 +16,6 @@ interface IDisperse is IOmniTxReceiver {
         address refundAddress;
     }
 
-    receive() external payable;
-
     function disperse(
         address token,
         uint256 amount,

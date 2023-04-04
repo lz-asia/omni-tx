@@ -58,6 +58,8 @@ interface IOmniTx {
         address from
     ) external view returns (uint256);
 
+    receive() external payable;
+
     function updateDstAddress(uint16 dstChainId, address _dstAddress) external;
 
     function transferNative(

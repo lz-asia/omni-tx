@@ -13,8 +13,6 @@ contract Disperse is ERC20Vault, IDisperse {
 
     constructor(address _omniTx) ERC20Vault(_omniTx) {}
 
-    receive() external payable {}
-
     function otReceive(
         address srcFrom,
         address tokenIn,
