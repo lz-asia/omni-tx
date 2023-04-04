@@ -34,8 +34,9 @@ library RefundUtils {
                 if (_fallback == address(0)) revert RefundFailure();
                 else {
                     emit RefundFallback(token, balance);
-                    IERC20(token).transfer(_fallback, balance);
-                    try IERC20Receiver(_fallback).onReceiveERC20(token, to, balance) {} catch {}
+                    if (_safeTransfer(token, _fallback, balance)) {
+                        try IERC20Receiver(_fallback).onReceiveERC20(token, to, balance) {} catch {}
+                    }
                 }
             }
         }
