@@ -84,6 +84,8 @@
   "dependencies": {
     "@lz-asia/stargate": "^1.0.0",
     "@openzeppelin/contracts": "^4.8.2",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/v3-periphery": "^1.4.3",
+    "solidity-bytes-utils": "0.8.0"
   }
 }
