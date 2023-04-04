@@ -5,31 +5,15 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IDisperse.sol";
 import "./interfaces/IOmniTx.sol";
+import "./ERC20Vault.sol";
 
-contract Disperse is IDisperse {
+contract Disperse is ERC20Vault, IDisperse {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
-    address public immutable omniTx;
-    mapping(address => mapping(address => uint256)) public balances;
-
-    constructor(address _omniTx) {
-        omniTx = _omniTx;
-    }
+    constructor(address _omniTx) ERC20Vault(_omniTx) {}
 
     receive() external payable {}
-
-    function onReceiveERC20(
-        address token,
-        address to,
-        uint256 amount
-    ) external {
-        if (msg.sender != omniTx) revert Forbidden();
-
-        balances[token][to] += amount;
-
-        emit OnReceiveERC20(token, to, amount);
-    }
 
     function otReceive(
         address srcFrom,
@@ -45,19 +29,6 @@ contract Disperse is IDisperse {
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
 
         return (address(0), 0);
-    }
-
-    function withdraw(
-        address token,
-        address to,
-        uint256 amount
-    ) external {
-        if (amount > balances[token][msg.sender]) revert InsufficientBalance();
-        balances[token][msg.sender] -= amount;
-
-        IERC20(token).safeTransfer(to, amount);
-
-        emit Withdraw(token, to, amount);
     }
 
     function disperse(

@@ -3,6 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IERC20Receiver.sol";
 
 library RefundUtils {
     error RefundFailure();
@@ -34,6 +35,7 @@ library RefundUtils {
                 else {
                     emit RefundFallback(token, balance);
                     IERC20(token).transfer(_fallback, balance);
+                    try IERC20Receiver(_fallback).onReceiveERC20(token, to, balance) {} catch {}
                 }
             }
         }
