@@ -21,6 +21,7 @@ contract ERC20Vault is IERC20Vault {
         uint256 amount
     ) external {
         if (msg.sender != omniTx) revert Forbidden();
+        if (token == address(0)) revert InvalidToken();
 
         balances[token][to] += amount;
 

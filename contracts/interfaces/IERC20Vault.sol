@@ -6,6 +6,7 @@ import "./IERC20Receiver.sol";
 
 interface IERC20Vault is IERC20Receiver {
     error Forbidden();
+    error InvalidToken();
     error InsufficientBalance();
 
     event Withdraw(address indexed token, address indexed to, uint256 amount);
