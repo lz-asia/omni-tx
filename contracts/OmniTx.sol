@@ -113,6 +113,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
             abi.encodePacked(dst),
             abi.encode(from, params.dstReceivers, params.dstData)
         );
+        IERC20(_token).approve(router, 0);
 
         RefundUtils.refundERC20(_token, from, address(0));
         RefundUtils.refundNative(from, address(0));

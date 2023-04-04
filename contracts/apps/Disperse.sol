@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IDisperse.sol";
-import "../interfaces/IOmniTx.sol";
 import "../ERC20Vault.sol";
 
 contract Disperse is ERC20Vault, IDisperse {

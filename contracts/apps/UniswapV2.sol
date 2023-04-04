@@ -2,16 +2,12 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "../interfaces/IUniswapV2.sol";
 import "../libraries/RefundUtils.sol";
 import "../ERC20Vault.sol";
 
 contract UniswapV2 is ERC20Vault, IUniswapV2 {
-    using SafeERC20 for IERC20;
-    using Address for address payable;
-
     uint8 private constant SWAP_EXACT_TOKENS_FOR_TOKENS = 1;
     uint8 private constant SWAP_TOKENS_FOR_EXACT_TOKENS = 2;
     uint8 private constant SWAP_EXACT_ETH_FOR_TOKENS = 3;
