@@ -5,7 +5,6 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IDisperse.sol";
 import "../libraries/RefundUtils.sol";
-import "../ERC20Vault.sol";
 
 contract Disperse is IDisperse {
     using SafeERC20 for IERC20;
@@ -26,7 +25,7 @@ contract Disperse is IDisperse {
         if (msg.sender != omniTx) revert Forbidden();
 
         (address[] memory recipients, uint256[] memory amounts) = abi.decode(data, (address[], uint256[]));
-        _disperse(tokenIn, amountIn, recipients, amounts, srcFrom);
+        _disperse(tokenIn, recipients, amounts, srcFrom);
 
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
 
@@ -35,7 +34,6 @@ contract Disperse is IDisperse {
 
     function _disperse(
         address tokenIn,
-        uint256 amountIn,
         address[] memory recipients,
         uint256[] memory amounts,
         address refundAddress

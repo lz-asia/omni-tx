@@ -8,7 +8,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../interfaces/IUniswapV3.sol";
 import "../libraries/RefundUtils.sol";
-import "../ERC20Vault.sol";
 
 contract UniswapV3 is IUniswapV3 {
     using SafeERC20 for IERC20;

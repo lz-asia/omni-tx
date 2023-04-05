@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "../interfaces/IUniswapV2.sol";
 import "../libraries/RefundUtils.sol";
-import "../ERC20Vault.sol";
 
 contract UniswapV2 is IUniswapV2 {
     using SafeERC20 for IERC20;
