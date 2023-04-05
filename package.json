@@ -82,6 +82,7 @@
     "typescript": "^4.8.0"
   },
   "dependencies": {
+    "@aave/core-v3": "^1.17.2",
     "@lz-asia/stargate": "^1.0.0",
     "@openzeppelin/contracts": "^4.8.2",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",

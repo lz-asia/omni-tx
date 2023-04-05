@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@aave/core-v3@^1.17.2":
+  version "1.17.2"
+  resolved "https://registry.yarnpkg.com/@aave/core-v3/-/core-v3-1.17.2.tgz#dfb543da87d4d6429e0c277b46b84057349f590f"
+  integrity sha512-ztCyKTALoeOQy6MlWVRCvHgilh6vT+d6lwjXhIsmlEYlA0v3L6dQBIyTFIzHBUfcpEjs0T3tSmcVxGY+GAUZ1g==
+
 "@aduh95/viz.js@^3.7.0":
   version "3.7.0"
   resolved "https://registry.yarnpkg.com/@aduh95/viz.js/-/viz.js-3.7.0.tgz#a20d86c5fc8f6abebdc39b96a4326e10375d77c0"
