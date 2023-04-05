@@ -2,13 +2,16 @@
 
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../interfaces/IUniswapV3.sol";
 import "../libraries/RefundUtils.sol";
 import "../ERC20Vault.sol";
 
-contract UniswapV3 is ERC20Vault, IUniswapV3 {
+contract UniswapV3 is IUniswapV3 {
+    using SafeERC20 for IERC20;
     using BytesLib for bytes;
 
     uint8 private constant SWAP_EXACT_INPUT_SINGLE = 1;
@@ -16,10 +19,18 @@ contract UniswapV3 is ERC20Vault, IUniswapV3 {
     uint8 private constant SWAP_EXACT_OUTPUT_SINGLE = 3;
     uint8 private constant SWAP_EXACT_OUTPUT = 4;
 
+    address public immutable omniTx;
     address public immutable router;
+    address public immutable weth;
 
-    constructor(address _omniTx, address _router) ERC20Vault(_omniTx) {
+    constructor(
+        address _omniTx,
+        address _router,
+        address _weth
+    ) {
+        omniTx = _omniTx;
         router = _router;
+        weth = _weth;
     }
 
     function otReceive(
@@ -35,34 +46,29 @@ contract UniswapV3 is ERC20Vault, IUniswapV3 {
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
     }
 
-    function swap(
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external {
-        if (amount > balances[token][msg.sender]) revert InsufficientBalance();
-        balances[token][msg.sender] -= amount;
-
-        _swap(token, amount, data, msg.sender);
-    }
-
     function _swap(
         address tokenIn,
         uint256 amountIn,
         bytes calldata data,
         address refundAddress
     ) internal returns (address tokenOut, uint256 amountOut) {
+        if (tokenIn == address(0)) {
+            IWETH(weth).deposit{value: amountIn}();
+            tokenIn = weth;
+        }
         IERC20(tokenIn).approve(router, amountIn);
-        uint8 action = uint8(bytes1(data[20:21]));
+
+        uint8 action = uint8(bytes1(data[0:1]));
         if (action == SWAP_EXACT_INPUT_SINGLE) {
-            (tokenOut, amountOut) = _swapExactInputSingle(tokenIn, amountIn, data[21:]);
+            (tokenOut, amountOut) = _swapExactInputSingle(tokenIn, amountIn, data[1:]);
         } else if (action == SWAP_EXACT_INPUT) {
-            (tokenOut, amountOut) = _swapExactInput(tokenIn, amountIn, data[21:]);
+            (tokenOut, amountOut) = _swapExactInput(tokenIn, amountIn, data[1:]);
         } else if (action == SWAP_EXACT_OUTPUT_SINGLE) {
-            (tokenOut, amountOut) = _swapExactOutputSingle(tokenIn, amountIn, data[21:]);
+            (tokenOut, amountOut) = _swapExactOutputSingle(tokenIn, amountIn, data[1:]);
         } else if (action == SWAP_EXACT_OUTPUT) {
-            (tokenOut, amountOut) = _swapExactOutput(tokenIn, amountIn, data[21:]);
+            (tokenOut, amountOut) = _swapExactOutput(tokenIn, amountIn, data[1:]);
         } else revert InvalidAction(action);
+
         IERC20(tokenIn).approve(router, 0);
 
         RefundUtils.refundERC20(tokenIn, refundAddress, address(0));

@@ -8,25 +8,4 @@ interface IDisperse is IOmniTxReceiver {
     error InvalidParams();
 
     event Disperse(address indexed token, address[] recipients, uint256[] amounts);
-
-    struct DisperseParams {
-        address token;
-        address[] recipients;
-        uint256[] amounts;
-        address refundAddress;
-    }
-
-    function disperse(
-        address token,
-        uint256 amount,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external;
-
-    function disperseIntrinsic(
-        address token,
-        uint256 amount,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external;
 }

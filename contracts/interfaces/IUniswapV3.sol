@@ -10,9 +10,5 @@ interface IUniswapV3 is IOmniTxReceiver {
 
     function router() external view returns (address);
 
-    function swap(
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external;
+    function weth() external view returns (address);
 }

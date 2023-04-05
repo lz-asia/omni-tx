@@ -4,13 +4,18 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IDisperse.sol";
+import "../libraries/RefundUtils.sol";
 import "../ERC20Vault.sol";
 
-contract Disperse is ERC20Vault, IDisperse {
+contract Disperse is IDisperse {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
-    constructor(address _omniTx) ERC20Vault(_omniTx) {}
+    address public immutable omniTx;
+
+    constructor(address _omniTx) {
+        omniTx = _omniTx;
+    }
 
     function otReceive(
         address srcFrom,
@@ -28,29 +33,6 @@ contract Disperse is ERC20Vault, IDisperse {
         return (address(0), 0);
     }
 
-    function disperse(
-        address token,
-        uint256 amount,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external {
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-
-        _disperse(token, amount, recipients, amounts, msg.sender);
-    }
-
-    function disperseIntrinsic(
-        address token,
-        uint256 amount,
-        address[] calldata recipients,
-        uint256[] calldata amounts
-    ) external {
-        if (amount > balances[token][msg.sender]) revert InsufficientBalance();
-        balances[token][msg.sender] -= amount;
-
-        _disperse(token, amount, recipients, amounts, msg.sender);
-    }
-
     function _disperse(
         address tokenIn,
         uint256 amountIn,
@@ -61,13 +43,11 @@ contract Disperse is ERC20Vault, IDisperse {
         uint256 length = recipients.length;
         if (length != amounts.length) revert InvalidParams();
 
-        uint256 amountTotal;
         if (tokenIn == address(0)) {
             for (uint256 i; i < length; ) {
                 uint256 amount = amounts[i];
                 if (amount > 0) {
                     payable(recipients[i]).sendValue(amount);
-                    amountTotal += amount;
                 }
                 unchecked {
                     ++i;
@@ -78,7 +58,6 @@ contract Disperse is ERC20Vault, IDisperse {
                 uint256 amount = amounts[i];
                 if (amount > 0) {
                     IERC20(tokenIn).safeTransfer(recipients[i], amount);
-                    amountTotal += amount;
                 }
                 unchecked {
                     ++i;
@@ -86,13 +65,9 @@ contract Disperse is ERC20Vault, IDisperse {
             }
         }
 
-        if (amountTotal < amountIn) {
-            IERC20(tokenIn).safeTransfer(refundAddress, amountIn - amountTotal);
-        }
+        RefundUtils.refundERC20(tokenIn, refundAddress, address(0));
+        RefundUtils.refundNative(refundAddress, address(0));
 
-        uint256 balance = address(this).balance;
-        if (balance > 0) {
-            payable(refundAddress).sendValue(balance);
-        }
+        emit Disperse(tokenIn, recipients, amounts);
     }
 }

@@ -8,26 +8,28 @@ interface IOmniTx {
     error PoolNotFound(uint256 poolId);
     error InvalidPoolId(uint256 poolId);
     error Forbidden();
+    error InvalidPayload();
     error InvalidParamLengths();
+    error CallFailure(address srcFrom, address to, address token, uint256 amount, bytes data, bytes reason);
 
     event UpdateWallet(address indexed _wallet);
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
-    event CallSuccess(address indexed srcFrom, address indexed to, address indexed token, uint256 amount);
-    event CallFailure(
-        address indexed srcFrom,
-        address indexed to,
-        address indexed token,
-        uint256 amount,
-        bytes data,
-        bytes reason
-    );
     event SGReceive(
         uint16 indexed srcChainId,
-        bytes indexed srcAddress,
+        bytes srcAddress,
         uint256 indexed nonce,
-        address srcFrom,
+        address indexed srcFrom,
         address token,
         uint256 amountLD
+    );
+    event SGReceiveFailure(
+        uint16 indexed srcChainId,
+        bytes srcAddress,
+        uint256 indexed nonce,
+        address indexed srcFrom,
+        address token,
+        uint256 amountLD,
+        bytes reason
     );
 
     struct TransferParams {
@@ -69,11 +71,23 @@ interface IOmniTx {
         TransferParams calldata params
     ) external payable;
 
-    function transferERC20(
+    function transfer(
         address token,
         uint256 amount,
         address[] calldata receivers,
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable;
+
+    function callReceiversNative(address[] calldata receivers, bytes[] calldata data)
+        external
+        payable
+        returns (address _tokenOut, uint256 _amountOut);
+
+    function callReceivers(
+        address token,
+        uint256 amount,
+        address[] calldata receivers,
+        bytes[] calldata data
+    ) external returns (address _tokenOut, uint256 _amountOut);
 }

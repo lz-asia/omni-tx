@@ -2,10 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC20Receiver.sol";
+interface IOmniTxReceiver {
+    error Forbidden();
 
-interface IOmniTxReceiver is IERC20Receiver {
     event OTReceive(address indexed srcFrom, address indexed token, uint256 amount, bytes data);
+
+    function omniTx() external view returns (address);
 
     function otReceive(
         address srcFrom,
