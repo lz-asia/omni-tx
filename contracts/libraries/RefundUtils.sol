@@ -9,15 +9,15 @@ library RefundUtils {
     error RefundFailure();
     event RefundFallback(address indexed token, uint256 amount);
 
-    function refundNative(address to, address _fallback) internal {
-        uint256 balance = address(this).balance;
-        if (balance > 0) {
-            (bool ok, ) = to.call{value: balance}("");
+    function refundNative(address to, address _fallback) internal returns (uint256 amount) {
+        amount = address(this).balance;
+        if (amount > 0) {
+            (bool ok, ) = to.call{value: amount}("");
             if (!ok) {
                 if (_fallback == address(0)) revert RefundFailure();
                 else {
-                    emit RefundFallback(address(0), balance);
-                    _fallback.call{value: balance}("");
+                    emit RefundFallback(address(0), amount);
+                    _fallback.call{value: amount}("");
                 }
             }
         }
@@ -27,15 +27,15 @@ library RefundUtils {
         address token,
         address to,
         address _fallback
-    ) internal {
-        uint256 balance = IERC20(token).balanceOf(address(this));
-        if (balance > 0) {
-            if (!_safeTransfer(token, to, balance)) {
+    ) internal returns (uint256 amount) {
+        amount = IERC20(token).balanceOf(address(this));
+        if (amount > 0) {
+            if (!_safeTransfer(token, to, amount)) {
                 if (_fallback == address(0)) revert RefundFailure();
                 else {
-                    emit RefundFallback(token, balance);
-                    if (_safeTransfer(token, _fallback, balance)) {
-                        try IERC20Receiver(_fallback).onReceiveERC20(token, to, balance) {} catch {}
+                    emit RefundFallback(token, amount);
+                    if (_safeTransfer(token, _fallback, amount)) {
+                        try IERC20Receiver(_fallback).onReceiveERC20(token, to, amount) {} catch {}
                     }
                 }
             }
