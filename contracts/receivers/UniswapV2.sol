@@ -95,6 +95,7 @@ contract UniswapV2 is IUniswapV2 {
         if (path[0] != tokenIn) revert InvalidPath(path);
 
         IUniswapV2Router01(router).swapTokensForExactTokens(amountOut, amountIn, path, omniTx, deadline);
+        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
         return (path[path.length - 1], amountOut);
     }
 
@@ -124,6 +125,7 @@ contract UniswapV2 is IUniswapV2 {
         bytes memory args
     ) internal returns (address, uint256) {
         (, uint256 amountOut) = _swapTokensForExactTokens(tokenIn, amountIn, args);
+        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
         return (address(0), amountOut);
     }
 }

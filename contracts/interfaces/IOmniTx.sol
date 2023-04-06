@@ -19,16 +19,18 @@ interface IOmniTx {
         bytes srcAddress,
         uint256 indexed nonce,
         address indexed srcFrom,
-        address token,
-        uint256 amountLD
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 amountOut
     );
     event SGReceiveFailure(
         uint16 indexed srcChainId,
         bytes srcAddress,
         uint256 indexed nonce,
         address indexed srcFrom,
-        address token,
-        uint256 amountLD,
+        address tokenIn,
+        uint256 amountIn,
         bytes reason
     );
 

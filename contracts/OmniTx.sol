@@ -148,8 +148,11 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         if (msg.sender != router) revert Forbidden();
 
         address srcFrom = payload.length < 32 ? address(0) : abi.decode(payload, (address));
-        try this.onSGReceive(srcChainId, srcAddress, nonce, token, amountLD, payload) {
-            emit SGReceive(srcChainId, srcAddress, nonce, srcFrom, token, amountLD);
+        try this.onSGReceive(srcChainId, srcAddress, nonce, token, amountLD, payload) returns (
+            address tokenOut,
+            uint256 amountOut
+        ) {
+            emit SGReceive(srcChainId, srcAddress, nonce, srcFrom, token, amountLD, tokenOut, amountOut);
         } catch (bytes memory reason) {
             address refundAddress = srcFrom == address(0) ? wallet : abi.decode(payload, (address));
             RefundUtils.refundERC20(token, refundAddress, wallet);
@@ -162,21 +165,17 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         uint16,
         bytes calldata,
         uint256,
-        address token,
-        uint256 amountLD,
+        address tokenIn,
+        uint256 amountIn,
         bytes calldata payload
-    ) external {
+    ) external returns (address tokenOut, uint256 amountOut) {
         if (msg.sender != address(this)) revert Forbidden();
 
         (address srcFrom, address[] memory receivers, bytes[] memory data) = abi.decode(
             payload,
             (address, address[], bytes[])
         );
-        (address tokenOut, ) = _callReceivers(token, amountLD, receivers, data, true, srcFrom);
-        if (tokenOut != address(0)) {
-            RefundUtils.refundERC20(tokenOut, srcFrom, wallet);
-        }
-        RefundUtils.refundNative(srcFrom, wallet);
+        return _callReceivers(tokenIn, amountIn, receivers, data, true, srcFrom);
     }
 
     function callReceiversNative(address[] calldata receivers, bytes[] calldata data)
@@ -184,11 +183,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         payable
         returns (address tokenOut, uint256 amountOut)
     {
-        (tokenOut, amountOut) = _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
-        if (tokenOut != address(0)) {
-            RefundUtils.refundERC20(tokenOut, msg.sender, wallet);
-        }
-        RefundUtils.refundNative(msg.sender, wallet);
+        return _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
     }
 
     function callReceivers(
@@ -199,11 +194,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) external returns (address tokenOut, uint256 amountOut) {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        (tokenOut, amountOut) = _callReceivers(token, amount, receivers, data, false, msg.sender);
-        if (tokenOut != address(0)) {
-            RefundUtils.refundERC20(tokenOut, msg.sender, wallet);
-        }
-        RefundUtils.refundNative(msg.sender, wallet);
+        return _callReceivers(token, amount, receivers, data, false, msg.sender);
     }
 
     function _callReceivers(
@@ -216,6 +207,8 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) internal returns (address _tokenOut, uint256 _amountOut) {
         if (receivers.length != data.length) revert InvalidParamLengths();
 
+        address refundFallback = _fallback ? wallet : address(0);
+
         for (uint256 i; i < receivers.length; ) {
             address to = receivers[i];
             bool native = tokenIn == address(0);
@@ -227,7 +220,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
                 uint256 amountOut
             ) {
                 if (!native) {
-                    RefundUtils.refundERC20(tokenIn, from, _fallback ? wallet : address(0));
+                    RefundUtils.refundERC20(tokenIn, from, refundFallback);
                 }
                 (tokenIn, amountIn) = (tokenOut, amountOut);
             } catch (bytes memory reason) {
@@ -237,6 +230,11 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
                 ++i;
             }
         }
+
+        if (tokenIn != address(0)) {
+            RefundUtils.refundERC20(tokenIn, from, refundFallback);
+        }
+        RefundUtils.refundNative(from, refundFallback);
 
         return (tokenIn, amountIn);
     }
