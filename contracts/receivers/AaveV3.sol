@@ -27,12 +27,6 @@ contract AaveV3 is IAaveV3 {
         addressesProvider = _addressesProvider;
     }
 
-    /**
-     *  collateral -> supply() -> aToken
-     *  aToken -> withdraw() -> collateral
-     *  borrow() -> asset
-     *  asset -> repay()
-     */
     function otReceive(
         address srcFrom,
         address tokenIn,
@@ -48,51 +42,51 @@ contract AaveV3 is IAaveV3 {
             (tokenOut, amountOut) = _withdraw(tokenIn, uint256(bytes32(data[1:33])));
         } else if (action == BORROW) {
             (tokenOut, amountOut) = _borrow(
-                tokenIn,
-                uint256(bytes32(data[1:33])),
-                uint8(bytes1(data[33:34])),
+                address(bytes20(data[1:21])),
+                uint256(bytes32(data[21:53])),
+                uint8(bytes1(data[53:54])),
                 srcFrom,
-                uint256(bytes32(data[34:66])),
-                uint8(bytes1(data[66:67])),
-                bytes32(data[67:99]),
-                bytes32(data[99:131])
+                uint256(bytes32(data[54:86])),
+                uint8(bytes1(data[86:87])),
+                bytes32(data[87:119]),
+                bytes32(data[119:151])
             );
         } else if (action == REPAY) {
-            _repay(tokenIn, uint256(bytes32(data[1:33])), uint8(bytes1(data[33:34])), srcFrom);
+            _repay(tokenIn, amountIn, uint8(bytes1(data[1:2])), srcFrom);
         } else revert InvalidAction(action);
+
+        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
 
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
     }
 
-    function _supply(address tokenIn, uint256 amountIn) internal returns (address tokenOut, uint256 amountOut) {
+    function _supply(address asset, uint256 amountAsset) internal returns (address tokenOut, uint256 amountOut) {
         address pool = IPoolAddressesProvider(addressesProvider).getPool();
         address dataProvider = IPoolAddressesProvider(addressesProvider).getPoolDataProvider();
-        (address aToken, , ) = IPoolDataProvider(dataProvider).getReserveTokensAddresses(tokenIn);
+        (address aToken, , ) = IPoolDataProvider(dataProvider).getReserveTokensAddresses(asset);
 
-        uint256 before = IERC20(tokenOut).balanceOf(omniTx);
+        uint256 before = IERC20(aToken).balanceOf(omniTx);
 
-        IERC20(tokenIn).approve(pool, amountIn);
-        IPool(pool).supply(tokenIn, amountIn, omniTx, 0);
-        IERC20(tokenIn).approve(pool, 0);
+        IERC20(asset).approve(pool, amountAsset);
+        IPool(pool).supply(asset, amountAsset, omniTx, 0);
+        IERC20(asset).approve(pool, 0);
 
-        return (aToken, IERC20(tokenOut).balanceOf(omniTx) - before);
+        return (aToken, IERC20(aToken).balanceOf(omniTx) - before);
     }
 
-    function _withdraw(address tokenIn, uint256 amountAsset) internal returns (address tokenOut, uint256 amountOut) {
-        address asset = IAToken(tokenIn).UNDERLYING_ASSET_ADDRESS();
+    function _withdraw(address aToken, uint256 amountAsset) internal returns (address tokenOut, uint256 amountOut) {
+        address asset = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
         address pool = IPoolAddressesProvider(addressesProvider).getPool();
 
         uint256 before = IERC20(asset).balanceOf(omniTx);
 
         IPool(pool).withdraw(asset, amountAsset, omniTx);
 
-        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
-
         return (asset, IERC20(asset).balanceOf(omniTx) - before);
     }
 
     function _borrow(
-        address tokenIn,
+        address asset,
         uint256 amountAsset,
         uint256 interestRateMode,
         address onBehalfOf,
@@ -101,33 +95,27 @@ contract AaveV3 is IAaveV3 {
         bytes32 r,
         bytes32 s
     ) internal returns (address tokenOut, uint256 amountOut) {
-        address asset = IAToken(tokenIn).UNDERLYING_ASSET_ADDRESS();
         address pool = IPoolAddressesProvider(addressesProvider).getPool();
         address dataProvider = IPoolAddressesProvider(addressesProvider).getPoolDataProvider();
         (, address sdToken, address vdToken) = IPoolDataProvider(dataProvider).getReserveTokensAddresses(asset);
         address dToken = interestRateMode == 1 ? sdToken : vdToken;
 
         ICreditDelegationToken(dToken).delegationWithSig(onBehalfOf, address(this), amountAsset, deadline, v, r, s);
-
         IPool(pool).borrow(asset, amountAsset, interestRateMode, 0, onBehalfOf);
 
-        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
         return (asset, RefundUtils.refundERC20(asset, omniTx, address(0)));
     }
 
     function _repay(
-        address tokenIn,
+        address asset,
         uint256 amountAsset,
         uint256 interestRateMode,
         address onBehalfOf
     ) internal {
-        address asset = IAToken(tokenIn).UNDERLYING_ASSET_ADDRESS();
         address pool = IPoolAddressesProvider(addressesProvider).getPool();
 
         IERC20(asset).approve(pool, amountAsset);
         IPool(pool).repay(asset, amountAsset, interestRateMode, onBehalfOf);
         IERC20(asset).approve(pool, 0);
-
-        RefundUtils.refundERC20(tokenIn, omniTx, address(0));
     }
 }
