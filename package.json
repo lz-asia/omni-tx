@@ -1,13 +1,13 @@
 {
-  "name": "@lz-asia/omni-tx",
+  "name": "omni-tx",
   "description": "",
   "version": "0.9.0",
   "keywords": [
     "layerzero",
     "lz"
   ],
-  "homepage": "https://github.com/lz-asia/omni-tx#readme",
-  "bugs": "https://github.com/lz-asia/omni-tx/issues",
+  "homepage": "https://github.com/levx-io/omni-tx#readme",
+  "bugs": "https://github.com/levx-io/omni-tx/issues",
   "license": "MIT",
   "author": "LevX <team@levx.io>",
   "bin": {
