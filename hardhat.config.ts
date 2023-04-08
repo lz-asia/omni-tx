@@ -15,8 +15,27 @@ import "@typechain/hardhat";
 import { HardhatUserConfig, task } from "hardhat/config";
 
 import { removeConsoleLog } from "hardhat-preprocessor";
+import { HttpNetworkUserConfig } from "hardhat/types";
 
 const accounts = { mnemonic: process.env.MNEMONIC || "test test test test test test test test test test test junk" };
+
+export const configForked = (networkName: string) => {
+    const network = config.networks[networkName] as HttpNetworkUserConfig;
+    return {
+        ...config,
+        networks: {
+            ...config.networks,
+            hardhat: {
+                allowUnlimitedContractSize: false,
+                chainId: (network.chainId || 0) + 8000,
+                forking: {
+                    enabled: true,
+                    url: network.url,
+                },
+            },
+        },
+    };
+};
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -191,7 +210,7 @@ const config: HardhatUserConfig = {
             tags: ["staging"],
         },
         fantom: {
-            url: `https://rpc.ankr.com/fantom`,
+            url: `https://rpc.ftm.tools/`,
             accounts,
             chainId: 250,
             live: true,
@@ -228,6 +247,16 @@ const config: HardhatUserConfig = {
         },
     },
 };
+
+["ethereum", "bsc", "polygon", "avalanche", "optimism", "arbitrum", "fantom"].forEach(networkName => {
+    const chainId = (config.networks[networkName].chainId || 0) + 8000;
+    config.networks[networkName + "-fork"] = {
+        url: `http://127.0.0.1:${chainId}`,
+        accounts,
+        chainId,
+        tags: ["test"],
+    };
+});
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more

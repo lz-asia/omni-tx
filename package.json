@@ -10,6 +10,9 @@
   "bugs": "https://github.com/lz-asia/omni-tx/issues",
   "license": "MIT",
   "author": "LevX <team@levx.io>",
+  "bin": {
+    "fork-omni-tx": "scripts/fork.sh"
+  },
   "files": [
     "abis",
     "deployments",
@@ -59,7 +62,7 @@
     "eslint": "^8.26.0",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.7.0",
-    "hardhat": "^2.12.0",
+    "hardhat": "^2.13.0",
     "hardhat-abi-exporter": "^2.10.0",
     "hardhat-deploy": "^0.11.0",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",

@@ -29,3 +29,6 @@ build/
 # Dodoc
 docs/**/*
 .history
+
+# Deployments
+deployments/*-fork/
