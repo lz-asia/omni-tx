@@ -1,12 +1,11 @@
-module.exports = async ({ getNamedAccounts, deployments }) => {
+module.exports = async ({ getNamedAccounts, deployments, network }) => {
     const { deploy, get } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    const proxy = await get("StargateProxy");
-
+    const omniTx = await get("OmniTx");
     await deploy("Disperse", {
         from: deployer,
-        args: [proxy.address],
+        args: [omniTx.address],
         log: true,
     });
 };

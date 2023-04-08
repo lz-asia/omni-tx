@@ -1,0 +1,18 @@
+{
+  "protocolDataProvider": {
+    "ethereum": "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
+    "bsc": null,
+    "avalanche": "0x65285E9dfab318f57051ab2b139ccCf232945451",
+    "polygon": "0x7551b5D2763519d4e37e8B81929D336De671d46d",
+    "arbitrum": null,
+    "optimism": null,
+    "fantom": null,
+    "goerli": "0x927F584d4321C1dCcBf5e2902368124b02419a1E",
+    "bsc-testnet": null,
+    "fuji": "0x0668EDE013c1c475724523409b8B6bE633469585",
+    "mumbai": "0xFA3bD19110d986c5e5E9DD5F69362d05035D045B",
+    "arbitrum-goerli": null,
+    "optimism-goerli": null,
+    "fantom-testnet": null
+  }
+}

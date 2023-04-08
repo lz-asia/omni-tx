@@ -1,0 +1,34 @@
+{
+  "router": {
+    "ethereum": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "bsc": null,
+    "avalanche": null,
+    "polygon": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "arbitrum": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "optimism": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "fantom": null,
+    "goerli": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "bsc-testnet": null,
+    "fuji": null,
+    "mumbai": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "arbitrum-goerli": null,
+    "optimism-goerli": null,
+    "fantom-testnet": null
+  },
+  "weth": {
+    "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "bsc": null,
+    "avalanche": null,
+    "polygon": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "arbitrum": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "optimism": "0x4200000000000000000000000000000000000006",
+    "fantom": null,
+    "goerli": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+    "bsc-testnet": null,
+    "fuji": null,
+    "mumbai": "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+    "arbitrum-goerli": null,
+    "optimism-goerli": null,
+    "fantom-testnet": null
+  }
+}

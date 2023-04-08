@@ -1,0 +1,18 @@
+{
+  "addressesProvider": {
+    "ethereum": "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
+    "bsc": null,
+    "avalanche": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "polygon": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "arbitrum": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "optimism": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "fantom": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "goerli": "0xC911B590248d127aD18546B186cC6B324e99F02c",
+    "bsc-testnet": null,
+    "fuji": "0x220c6A7D868FC38ECB47d5E69b99e9906300286A",
+    "mumbai": "0xeb7A892BB04A8f836bDEeBbf60897A7Af1Bf5d7F",
+    "arbitrum-goerli": "0x4EEE0BB72C2717310318f27628B3c8a708E4951C",
+    "optimism-goerli": "0x0b8FAe5f9Bf5a1a5867FB5b39fF4C028b1C2ebA9",
+    "fantom-testnet": "0xC809bea009Ca8DAA680f6A1c4Ca020D550210736"
+  }
+}
