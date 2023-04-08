@@ -12,7 +12,7 @@ interface IOmniTx {
     error InvalidParamLengths();
     error CallFailure(address srcFrom, address to, address token, uint256 amount, bytes data, bytes reason);
 
-    event UpdateWallet(address indexed _wallet);
+    event UpdateVault(address indexed _vault);
     event UpdateDstAddress(uint16 indexed dstChainId, address indexed dstAddress);
     event SGReceive(
         uint16 indexed srcChainId,
@@ -49,7 +49,7 @@ interface IOmniTx {
 
     function factory() external view returns (address);
 
-    function wallet() external view returns (address);
+    function vault() external view returns (address);
 
     function dstAddress(uint16 dstChainId) external view returns (address);
 

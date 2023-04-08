@@ -12,6 +12,7 @@ import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargatePool.sol";
 import "./interfaces/IOmniTxReceiver.sol";
 import "./libraries/RefundUtils.sol";
+import "./ERC20Vault.sol";
 
 contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     using SafeERC20 for IERC20;
@@ -19,14 +20,15 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
     address public immutable router;
     address public immutable factory;
-    address public wallet;
+    address public vault;
     mapping(uint16 => address) public dstAddress;
 
-    constructor(address _router, address _wallet) {
+    constructor(address _router) {
         router = _router;
         factory = IStargateRouter(_router).factory();
-        wallet = _wallet;
-        emit UpdateWallet(_wallet);
+        address _vault = address(new ERC20Vault(address(this)));
+        vault = _vault;
+        emit UpdateVault(_vault);
     }
 
     function estimateFee(
@@ -52,9 +54,9 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
     receive() external payable {}
 
-    function updateWallet(address _wallet) external onlyOwner {
-        wallet = _wallet;
-        emit UpdateWallet(_wallet);
+    function updateVault(address _vault) external onlyOwner {
+        vault = _vault;
+        emit UpdateVault(_vault);
     }
 
     function updateDstAddress(uint16 dstChainId, address _dstAddress) external onlyOwner {
@@ -154,8 +156,8 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         ) {
             emit SGReceive(srcChainId, srcAddress, nonce, srcFrom, token, amountLD, tokenOut, amountOut);
         } catch (bytes memory reason) {
-            address refundAddress = srcFrom == address(0) ? wallet : abi.decode(payload, (address));
-            RefundUtils.refundERC20(token, refundAddress, wallet);
+            address refundAddress = srcFrom == address(0) ? vault : abi.decode(payload, (address));
+            RefundUtils.refundERC20(token, refundAddress, vault);
 
             emit SGReceiveFailure(srcChainId, srcAddress, nonce, srcFrom, token, amountLD, reason);
         }
@@ -207,7 +209,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) internal returns (address _tokenOut, uint256 _amountOut) {
         if (receivers.length != data.length) revert InvalidParamLengths();
 
-        address refundFallback = _fallback ? wallet : address(0);
+        address refundFallback = _fallback ? vault : address(0);
 
         for (uint256 i; i < receivers.length; ) {
             address to = receivers[i];
