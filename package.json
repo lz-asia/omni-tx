@@ -17,7 +17,9 @@
     "abis",
     "deployments",
     "docs",
-    "typechain-types"
+    "hardhat-fork",
+    "typechain-types",
+    "hardhat.config.ts"
   ],
   "scripts": {
     "prepare": "husky install && shx chmod +x .husky/pre-commit",
