@@ -30,5 +30,21 @@
     "arbitrum": "0x55bdb4164d28fbaf0898e0ef14a589ac09ac9970",
     "optimism": "0xe3b53af74a4bf62ae5511055290838050bf764df",
     "fantom": "0x9d1b1669c73b033dfe47ae5a0164ab96df25b944"
+  },
+  "sgeth": {
+    "goerli": "0xCf1F9cD3789Fc6296f4abB11dc460067Ae1a2673",
+    "bsc-testnet": null,
+    "fuji": null,
+    "mumbai": null,
+    "arbitrum-goerli": "0xb45186E02CC4AbC0e390EdFfdc2aBC8D523ea15e",
+    "optimism-goerli": "0xf70E5b860e24cc18436b1A6AA512a1599EE90731",
+    "fantom-testnet": null,
+    "ethereum": "0x72E2F4830b9E45d52F80aC08CB2bEC0FeF72eD9c",
+    "bsc": null,
+    "avalanche": null,
+    "polygon": null,
+    "arbitrum": "0x82CbeCF39bEe528B5476FE6d1550af59a9dB6Fc0",
+    "optimism": "0xb69c8CBCD90A39D8D3d3ccf0a3E968511C3856A0",
+    "fantom": null
   }
 }
