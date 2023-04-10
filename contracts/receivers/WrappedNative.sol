@@ -22,6 +22,8 @@ contract WrappedNative is Ownable, IWrappedNative {
         omniTx = _omniTx;
     }
 
+    receive() external payable {}
+
     function updateWhitelisted(address addr, bool _whitelisted) external onlyOwner {
         whitelisted[addr] = _whitelisted;
         emit UpdateWhitelisted(addr, _whitelisted);

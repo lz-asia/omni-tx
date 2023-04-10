@@ -53,6 +53,7 @@ contract AaveV2 is IAaveV2 {
         } else revert InvalidAction(action);
 
         RefundUtils.refundERC20(tokenIn, omniTx, address(0));
+        RefundUtils.refundNative(omniTx, address(0));
 
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
     }

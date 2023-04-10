@@ -23,6 +23,8 @@ contract UniswapV2 is IUniswapV2 {
         router = _router;
     }
 
+    receive() external payable {}
+
     function otReceive(
         address srcFrom,
         address tokenIn,
@@ -59,9 +61,9 @@ contract UniswapV2 is IUniswapV2 {
 
         if (tokenIn != address(0)) {
             IERC20(tokenIn).approve(router, 0);
+            RefundUtils.refundERC20(tokenIn, refundAddress, address(0));
         }
 
-        RefundUtils.refundERC20(tokenIn, refundAddress, address(0));
         RefundUtils.refundNative(refundAddress, address(0));
     }
 
