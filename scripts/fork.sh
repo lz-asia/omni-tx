@@ -19,38 +19,40 @@ $HARDHAT node --config hardhat-fork/fantom.config.ts --port 8250 1>/dev/null&
 sleep 5
 echo "✅ successfully forked mainnets"
 
+echo "compiling contracts..."
+$HARDHAT compile
 echo "⌛️️ ethereum"
-rm -rf deployments/ethereum-fork && ($HARDHAT deploy --network ethereum-fork || true)
+rm -rf deployments/ethereum-fork && ($HARDHAT deploy --no-compile --network ethereum-fork || true)
 echo "⌛️️ bsc"
-rm -rf deployments/bsc-fork && ($HARDHAT deploy --network bsc-fork || true)
+rm -rf deployments/bsc-fork && ($HARDHAT deploy --no-compile --network bsc-fork || true)
 echo "⌛️️ avalanche"
-rm -rf deployments/avalanche-fork && ($HARDHAT deploy --network avalanche-fork || true)
+rm -rf deployments/avalanche-fork && ($HARDHAT deploy --no-compile --network avalanche-fork || true)
 echo "⌛️️ polygon"
-rm -rf deployments/polygon-fork && ($HARDHAT deploy --network polygon-fork || true)
+rm -rf deployments/polygon-fork && ($HARDHAT deploy --no-compile --network polygon-fork || true)
 echo "⌛️️ arbitrum"
-rm -rf deployments/arbitrum-fork && ($HARDHAT deploy --network arbitrum-fork || true)
+rm -rf deployments/arbitrum-fork && ($HARDHAT deploy --no-compile --network arbitrum-fork || true)
 echo "⌛️️ optimism"
-rm -rf deployments/optimism-fork && ($HARDHAT deploy --network optimism-fork || true)
+rm -rf deployments/optimism-fork && ($HARDHAT deploy --no-compile --network optimism-fork || true)
 echo "⌛️️ fantom"
-rm -rf deployments/fantom-fork && ($HARDHAT deploy --network fantom-fork || true)
+rm -rf deployments/fantom-fork && ($HARDHAT deploy --no-compile --network fantom-fork || true)
 
 echo "⌛️️ ethereum"
-$HARDHAT run scripts/setup.ts --network ethereum-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network ethereum-fork &&\
 echo "⌛️️ bsc"
-$HARDHAT run scripts/setup.ts --network bsc-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network bsc-fork &&\
 echo "⌛️️ avalanche"
-$HARDHAT run scripts/setup.ts --network avalanche-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network avalanche-fork &&\
 echo "⌛️️ polygon"
-$HARDHAT run scripts/setup.ts --network polygon-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network polygon-fork &&\
 echo "⌛️️ arbitrum"
-$HARDHAT run scripts/setup.ts --network arbitrum-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network arbitrum-fork &&\
 echo "⌛️️ optimism"
-$HARDHAT run scripts/setup.ts --network optimism-fork &&\
+$HARDHAT run scripts/setup.ts --no-compile --network optimism-fork &&\
 echo "⌛️️ fantom"
-$HARDHAT run scripts/setup.ts --network fantom-fork
+$HARDHAT run scripts/setup.ts --no-compile --network fantom-fork
 
 clear() {
-  ps ax | grep "$HARDHAT" | grep -v "grep" | awk '{print $1}' | xargs kill -9
+  ps ax | grep "/node_modules/hardhat/internal/cli/bootstrap.js" | grep -v "grep" | awk '{print $1}' | xargs kill -9
 }
 trap clear EXIT
 wait
