@@ -177,7 +177,10 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
             payload,
             (address, address[], bytes[])
         );
-        return _callReceivers(tokenIn, amountIn, receivers, data, true, srcFrom);
+        (tokenOut, amountOut) = _callReceivers(tokenIn, amountIn, receivers, data, true, srcFrom);
+
+        RefundUtils.refundERC20(tokenOut, srcFrom, vault);
+        RefundUtils.refundNative(srcFrom, vault);
     }
 
     function callReceiversNative(address[] calldata receivers, bytes[] calldata data)
@@ -185,7 +188,12 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         payable
         returns (address tokenOut, uint256 amountOut)
     {
-        return _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
+        (tokenOut, amountOut) = _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
+
+        if (tokenOut != address(0)) {
+            RefundUtils.refundERC20(tokenOut, msg.sender, vault);
+        }
+        RefundUtils.refundNative(msg.sender, vault);
     }
 
     function callReceivers(
@@ -196,7 +204,12 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) external returns (address tokenOut, uint256 amountOut) {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        return _callReceivers(token, amount, receivers, data, false, msg.sender);
+        (tokenOut, amountOut) = _callReceivers(token, amount, receivers, data, false, msg.sender);
+
+        if (tokenOut != address(0)) {
+            RefundUtils.refundERC20(tokenOut, msg.sender, vault);
+        }
+        RefundUtils.refundNative(msg.sender, vault);
     }
 
     function _callReceivers(
@@ -232,11 +245,6 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
                 ++i;
             }
         }
-
-        if (tokenIn != address(0)) {
-            RefundUtils.refundERC20(tokenIn, from, refundFallback);
-        }
-        RefundUtils.refundNative(from, refundFallback);
 
         return (tokenIn, amountIn);
     }
