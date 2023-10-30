@@ -1,41 +1,18 @@
 import "dotenv/config";
-import "@nomiclabs/hardhat-etherscan";
+import "@lz-kit/cli/hardhat";
 import "@nomiclabs/hardhat-solhint";
-import "@nomiclabs/hardhat-waffle";
+import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-abi-exporter";
 import "hardhat-deploy";
-import "hardhat-gas-reporter";
 import "hardhat-spdx-license-identifier";
-import "hardhat-tracer";
 import "hardhat-watcher";
-import "solidity-coverage";
 import "@primitivefi/hardhat-dodoc";
-import "@typechain/hardhat";
 
 import { HardhatUserConfig, task } from "hardhat/config";
 
 import { removeConsoleLog } from "hardhat-preprocessor";
-import { HttpNetworkUserConfig } from "hardhat/types";
 
 const accounts = { mnemonic: process.env.MNEMONIC || "test test test test test test test test test test test junk" };
-
-export const configForked = (networkName: string) => {
-    const network = config.networks[networkName] as HttpNetworkUserConfig;
-    return {
-        ...config,
-        networks: {
-            ...config.networks,
-            hardhat: {
-                allowUnlimitedContractSize: false,
-                chainId: (network.chainId || 0) + 8000,
-                forking: {
-                    enabled: true,
-                    url: network.url,
-                },
-            },
-        },
-    };
-};
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
