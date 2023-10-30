@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IERC20Receiver.sol";
@@ -23,11 +23,7 @@ library RefundUtils {
         }
     }
 
-    function refundERC20(
-        address token,
-        address to,
-        address _fallback
-    ) internal returns (uint256 amount) {
+    function refundERC20(address token, address to, address _fallback) internal returns (uint256 amount) {
         amount = IERC20(token).balanceOf(address(this));
         if (amount > 0) {
             if (!_safeTransfer(token, to, amount)) {
@@ -42,11 +38,7 @@ library RefundUtils {
         }
     }
 
-    function _safeTransfer(
-        address token,
-        address to,
-        uint256 amount
-    ) private returns (bool) {
+    function _safeTransfer(address token, address to, uint256 amount) private returns (bool) {
         (bool success, bytes memory data) = token.call(abi.encodeCall(IERC20.transfer, (to, amount)));
         return success && (data.length == 0 || abi.decode(data, (bool)));
     }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "../interfaces/IAaveV2.sol";
 import "../interfaces/IProtocolDataProvider.sol";
@@ -101,12 +101,7 @@ contract AaveV2 is IAaveV2 {
         return (asset, RefundUtils.refundERC20(asset, omniTx, address(0)));
     }
 
-    function _repay(
-        address asset,
-        uint256 amountAsset,
-        uint256 interestRateMode,
-        address onBehalfOf
-    ) internal {
+    function _repay(address asset, uint256 amountAsset, uint256 interestRateMode, address onBehalfOf) internal {
         address pool = ILendingPoolAddressesProvider(addressesProvider).getLendingPool();
 
         IERC20(asset).approve(pool, amountAsset);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -50,11 +50,7 @@ contract WrappedNative is Ownable, IWrappedNative {
         emit OTReceive(srcFrom, tokenIn, amountIn, data);
     }
 
-    function _wrap(
-        address tokenIn,
-        uint256 amountIn,
-        bytes calldata data
-    ) internal returns (address, uint256) {
+    function _wrap(address tokenIn, uint256 amountIn, bytes calldata data) internal returns (address, uint256) {
         if (tokenIn != address(0)) revert NotNative(tokenIn);
 
         address weth = address(bytes20(data[1:21]));

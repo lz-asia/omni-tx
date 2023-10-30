@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 import "../interfaces/IStargatePool.sol";
 
 contract StargatePoolMock is IStargatePool {
@@ -30,11 +30,7 @@ contract StargatePoolMock is IStargatePool {
         return chainPaths.length;
     }
 
-    function createChainPath(
-        uint16 _dstChainId,
-        uint256 _dstPoolId,
-        uint256 _weight
-    ) external {
+    function createChainPath(uint16 _dstChainId, uint256 _dstPoolId, uint256 _weight) external {
         for (uint256 i = 0; i < chainPaths.length; ++i) {
             ChainPath memory cp = chainPaths[i];
             bool exists = cp.dstChainId == _dstChainId && cp.dstPoolId == _dstPoolId;

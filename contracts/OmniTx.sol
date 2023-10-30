@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -44,7 +44,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
         (uint256 fee, ) = IStargateRouter(router).quoteLayerZeroFee(
             dstChainId,
-            1, /*TYPE_SWAP_REMOTE*/
+            1 /*TYPE_SWAP_REMOTE*/,
             abi.encodePacked(dst),
             abi.encode(from, dstReceivers, dstData),
             IStargateRouter.lzTxObj(dstGasForCall, dstNativeAmount, abi.encodePacked(from))
@@ -87,12 +87,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         _transfer(tokenOut, amountOut, params, msg.value);
     }
 
-    function _transfer(
-        address token,
-        uint256 amount,
-        TransferParams calldata params,
-        uint256 fee
-    ) internal {
+    function _transfer(address token, uint256 amount, TransferParams calldata params, uint256 fee) internal {
         address dst = dstAddress[params.dstChainId];
         if (dst == address(0)) revert DstChainNotFound(params.dstChainId);
 
@@ -183,11 +178,10 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         RefundUtils.refundNative(srcFrom, vault);
     }
 
-    function callReceiversNative(address[] calldata receivers, bytes[] calldata data)
-        external
-        payable
-        returns (address tokenOut, uint256 amountOut)
-    {
+    function callReceiversNative(
+        address[] calldata receivers,
+        bytes[] calldata data
+    ) external payable returns (address tokenOut, uint256 amountOut) {
         (tokenOut, amountOut) = _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
 
         if (tokenOut != address(0)) {

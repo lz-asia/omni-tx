@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -22,11 +22,7 @@ contract UniswapV3 is IUniswapV3 {
     address public immutable router;
     address public immutable weth;
 
-    constructor(
-        address _omniTx,
-        address _router,
-        address _weth
-    ) {
+    constructor(address _omniTx, address _router, address _weth) {
         omniTx = _omniTx;
         router = _router;
         weth = _weth;
@@ -97,11 +93,7 @@ contract UniswapV3 is IUniswapV3 {
         return (tokenOut, amountOut);
     }
 
-    function _swapExactInput(
-        address tokenIn,
-        uint256 amountIn,
-        bytes memory args
-    ) internal returns (address, uint256) {
+    function _swapExactInput(address tokenIn, uint256 amountIn, bytes memory args) internal returns (address, uint256) {
         (bytes memory path, uint256 deadline, uint256 amountOutMinimum) = abi.decode(args, (bytes, uint256, uint256));
         if (path.toAddress(0) != tokenIn) revert InvalidPath(path);
 

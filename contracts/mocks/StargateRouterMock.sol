@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/ILayerZeroReceiver.sol";
@@ -79,12 +79,7 @@ contract StargateRouterMock is ILayerZeroReceiver {
         return abi.encodePacked(uint16(1), lzTxParams.dstGasForCall);
     }
 
-    function lzReceive(
-        uint16 srcChainId,
-        bytes memory srcAddress,
-        uint64 nonce,
-        bytes calldata payload
-    ) external {
+    function lzReceive(uint16 srcChainId, bytes memory srcAddress, uint64 nonce, bytes calldata payload) external {
         require(msg.sender == address(lzEndpointMock), "Stargate: only LayerZero endpoint can call lzReceive");
         require(
             srcAddress.length == bridgeLookup[srcChainId].length &&

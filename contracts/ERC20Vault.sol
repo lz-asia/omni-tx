@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IERC20Vault.sol";
@@ -15,11 +15,7 @@ contract ERC20Vault is IERC20Vault {
         omniTx = _omniTx;
     }
 
-    function onReceiveERC20(
-        address token,
-        address to,
-        uint256 amount
-    ) external {
+    function onReceiveERC20(address token, address to, uint256 amount) external {
         if (msg.sender != omniTx) revert Forbidden();
         if (token == address(0)) revert InvalidToken();
 
@@ -28,11 +24,7 @@ contract ERC20Vault is IERC20Vault {
         emit OnReceiveERC20(token, to, amount);
     }
 
-    function withdraw(
-        address token,
-        address to,
-        uint256 amount
-    ) external {
+    function withdraw(address token, address to, uint256 amount) external {
         if (amount > balances[token][msg.sender]) revert InsufficientBalance();
         balances[token][msg.sender] -= amount;
 
