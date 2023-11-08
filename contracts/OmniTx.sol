@@ -10,7 +10,7 @@ import "./interfaces/IOmniTx.sol";
 import "./interfaces/IStargateRouter.sol";
 import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargatePool.sol";
-import "./interfaces/IOmniTxReceiver.sol";
+import "./interfaces/IOmniTxAdapter.sol";
 import "./libraries/RefundUtils.sol";
 import "./ERC20Vault.sol";
 
@@ -33,7 +33,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
     function estimateFee(
         uint16 dstChainId,
-        address[] calldata dstReceivers,
+        address[] calldata dstAdapters,
         bytes[] calldata dstData,
         uint256 dstGasForCall,
         uint256 dstNativeAmount,
@@ -46,7 +46,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
             dstChainId,
             1 /*TYPE_SWAP_REMOTE*/,
             abi.encodePacked(dst),
-            abi.encode(from, dstReceivers, dstData),
+            abi.encode(from, dstAdapters, dstData),
             IStargateRouter.lzTxObj(dstGasForCall, dstNativeAmount, abi.encodePacked(from))
         );
         return fee;
@@ -66,24 +66,24 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
     function transferNative(
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable {
-        (address tokenOut, uint256 amountOut) = _callReceivers(address(0), amount, receivers, data, false, msg.sender);
+        (address tokenOut, uint256 amountOut) = _callAdapters(address(0), amount, adapters, data, false, msg.sender);
         _transfer(tokenOut, amountOut, params, msg.value - amount);
     }
 
     function transfer(
         address token,
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        (address tokenOut, uint256 amountOut) = _callReceivers(token, amount, receivers, data, false, msg.sender);
+        (address tokenOut, uint256 amountOut) = _callAdapters(token, amount, adapters, data, false, msg.sender);
         _transfer(tokenOut, amountOut, params, msg.value);
     }
 
@@ -106,7 +106,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
             params.dstMinAmount,
             IStargateRouter.lzTxObj(params.dstGasForCall, params.dstNativeAmount, abi.encodePacked(msg.sender)),
             abi.encodePacked(dst),
-            abi.encode(msg.sender, params.dstReceivers, params.dstData)
+            abi.encode(msg.sender, params.dstAdapters, params.dstData)
         );
         IERC20(token).approve(router, 0);
 
@@ -168,21 +168,21 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) external returns (address tokenOut, uint256 amountOut) {
         if (msg.sender != address(this)) revert Forbidden();
 
-        (address srcFrom, address[] memory receivers, bytes[] memory data) = abi.decode(
+        (address srcFrom, address[] memory adapters, bytes[] memory data) = abi.decode(
             payload,
             (address, address[], bytes[])
         );
-        (tokenOut, amountOut) = _callReceivers(tokenIn, amountIn, receivers, data, true, srcFrom);
+        (tokenOut, amountOut) = _callAdapters(tokenIn, amountIn, adapters, data, true, srcFrom);
 
         RefundUtils.refundERC20(tokenOut, srcFrom, vault);
         RefundUtils.refundNative(srcFrom, vault);
     }
 
-    function callReceiversNative(
-        address[] calldata receivers,
+    function callAdaptersNative(
+        address[] calldata adapters,
         bytes[] calldata data
     ) external payable returns (address tokenOut, uint256 amountOut) {
-        (tokenOut, amountOut) = _callReceivers(address(0), msg.value, receivers, data, false, msg.sender);
+        (tokenOut, amountOut) = _callAdapters(address(0), msg.value, adapters, data, false, msg.sender);
 
         if (tokenOut != address(0)) {
             RefundUtils.refundERC20(tokenOut, msg.sender, vault);
@@ -190,15 +190,15 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         RefundUtils.refundNative(msg.sender, vault);
     }
 
-    function callReceivers(
+    function callAdapters(
         address token,
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data
     ) external returns (address tokenOut, uint256 amountOut) {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        (tokenOut, amountOut) = _callReceivers(token, amount, receivers, data, false, msg.sender);
+        (tokenOut, amountOut) = _callAdapters(token, amount, adapters, data, false, msg.sender);
 
         if (tokenOut != address(0)) {
             RefundUtils.refundERC20(tokenOut, msg.sender, vault);
@@ -206,25 +206,25 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         RefundUtils.refundNative(msg.sender, vault);
     }
 
-    function _callReceivers(
+    function _callAdapters(
         address tokenIn,
         uint256 amountIn,
-        address[] memory receivers,
+        address[] memory adapters,
         bytes[] memory data,
         bool _fallback,
         address from
     ) internal returns (address _tokenOut, uint256 _amountOut) {
-        if (receivers.length != data.length) revert InvalidParamLengths();
+        if (adapters.length != data.length) revert InvalidParamLengths();
 
         address refundFallback = _fallback ? vault : address(0);
 
-        for (uint256 i; i < receivers.length; ) {
-            address to = receivers[i];
+        for (uint256 i; i < adapters.length; ) {
+            address to = adapters[i];
             bool native = tokenIn == address(0);
             if (!native) {
                 IERC20(tokenIn).safeTransfer(to, amountIn);
             }
-            try IOmniTxReceiver(to).otReceive{value: native ? amountIn : 0}(from, tokenIn, amountIn, data[i]) returns (
+            try IOmniTxAdapter(to).otReceive{value: native ? amountIn : 0}(from, tokenIn, amountIn, data[i]) returns (
                 address tokenOut,
                 uint256 amountOut
             ) {

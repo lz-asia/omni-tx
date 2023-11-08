@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IOmniTxReceiver.sol";
+import "./IOmniTxAdapter.sol";
 
-interface IDisperse is IOmniTxReceiver {
+interface IDisperse is IOmniTxAdapter {
     error InvalidParams();
 
     event Disperse(address indexed token, address[] recipients, uint256[] amounts);

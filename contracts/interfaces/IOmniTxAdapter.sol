@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface IOmniTxReceiver {
+interface IOmniTxAdapter {
     error Forbidden();
 
     event OTReceive(address indexed srcFrom, address indexed token, uint256 amount, bytes data);

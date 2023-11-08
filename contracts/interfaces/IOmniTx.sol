@@ -39,7 +39,7 @@ interface IOmniTx {
         uint16 dstChainId;
         uint256 dstPoolId;
         uint256 dstMinAmount;
-        address[] dstReceivers;
+        address[] dstAdapters;
         bytes[] dstData;
         uint256 dstGasForCall;
         uint256 dstNativeAmount;
@@ -55,7 +55,7 @@ interface IOmniTx {
 
     function estimateFee(
         uint16 dstChainId,
-        address[] calldata dstReceivers,
+        address[] calldata dstAdapters,
         bytes[] calldata dstData,
         uint256 dstGasForCall,
         uint256 dstNativeAmount,
@@ -68,7 +68,7 @@ interface IOmniTx {
 
     function transferNative(
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable;
@@ -76,20 +76,20 @@ interface IOmniTx {
     function transfer(
         address token,
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable;
 
-    function callReceiversNative(address[] calldata receivers, bytes[] calldata data)
-        external
-        payable
-        returns (address _tokenOut, uint256 _amountOut);
+    function callAdaptersNative(
+        address[] calldata adapters,
+        bytes[] calldata data
+    ) external payable returns (address _tokenOut, uint256 _amountOut);
 
-    function callReceivers(
+    function callAdapters(
         address token,
         uint256 amount,
-        address[] calldata receivers,
+        address[] calldata adapters,
         bytes[] calldata data
     ) external returns (address _tokenOut, uint256 _amountOut);
 }

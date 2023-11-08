@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IOmniTxReceiver.sol";
+import "./IOmniTxAdapter.sol";
 
-interface IWrappedNative is IOmniTxReceiver {
+interface IWrappedNative is IOmniTxAdapter {
     error NotWhitelisted(address addr);
     error NotNative(address token);
     error InvalidAction(uint8 action);

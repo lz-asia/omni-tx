@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IOmniTxReceiver.sol";
+import "./IOmniTxAdapter.sol";
 
-interface IUniswapV3 is IOmniTxReceiver {
+interface IUniswapV3 is IOmniTxAdapter {
     error InvalidAction(uint8 action);
     error InvalidPath(bytes path);
 

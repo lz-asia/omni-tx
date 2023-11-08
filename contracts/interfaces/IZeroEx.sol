@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IOmniTxReceiver.sol";
+import "./IOmniTxAdapter.sol";
 
-interface IZeroEx is IOmniTxReceiver {
+interface IZeroEx is IOmniTxAdapter {
     error CallFailure(bytes reason);
     error InvalidTokenOut(address tokenOut);
 

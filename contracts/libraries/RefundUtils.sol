@@ -7,7 +7,8 @@ import "../interfaces/IERC20Receiver.sol";
 
 library RefundUtils {
     error RefundFailure();
-    event RefundFallback(address indexed token, uint256 amount);
+    event RefundFallbackSuccess(address indexed token, uint256 amount);
+    event RefundFallbackFailure(address indexed token, uint256 amount);
 
     function refundNative(address to, address _fallback) internal returns (uint256 amount) {
         amount = address(this).balance;
@@ -15,9 +16,12 @@ library RefundUtils {
             (bool ok, ) = to.call{value: amount}("");
             if (!ok) {
                 if (_fallback == address(0)) revert RefundFailure();
-                else {
-                    emit RefundFallback(address(0), amount);
-                    _fallback.call{value: amount}("");
+
+                (ok, ) = _fallback.call{value: amount}("");
+                if (ok) {
+                    emit RefundFallbackSuccess(address(0), amount);
+                } else {
+                    emit RefundFallbackFailure(address(0), amount);
                 }
             }
         }
@@ -28,11 +32,12 @@ library RefundUtils {
         if (amount > 0) {
             if (!_safeTransfer(token, to, amount)) {
                 if (_fallback == address(0)) revert RefundFailure();
-                else {
-                    emit RefundFallback(token, amount);
-                    if (_safeTransfer(token, _fallback, amount)) {
-                        try IERC20Receiver(_fallback).onReceiveERC20(token, to, amount) {} catch {}
-                    }
+
+                if (_safeTransfer(token, _fallback, amount)) {
+                    try IERC20Receiver(_fallback).onReceiveERC20(token, to, amount) {} catch {}
+                    emit RefundFallbackSuccess(token, amount);
+                } else {
+                    emit RefundFallbackFailure(token, amount);
                 }
             }
         }
