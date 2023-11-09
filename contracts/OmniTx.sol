@@ -9,6 +9,7 @@ import "./interfaces/IStargateReceiver.sol";
 import "./interfaces/IOmniTx.sol";
 import "./interfaces/IStargateRouter.sol";
 import "./interfaces/IStargateFactory.sol";
+import "./interfaces/IStargateEthVault.sol";
 import "./interfaces/IStargatePool.sol";
 import "./interfaces/IOmniTxAdapter.sol";
 import "./libraries/RefundUtils.sol";
@@ -20,12 +21,14 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
     address public immutable router;
     address public immutable factory;
+    address public immutable sgeth;
     address public vault;
     mapping(uint16 => address) public dstAddress;
 
-    constructor(address _router) {
+    constructor(address _router, address _sgeth) {
         router = _router;
         factory = IStargateRouter(_router).factory();
+        sgeth = _sgeth;
         address _vault = address(new ERC20Vault(address(this)));
         vault = _vault;
         emit UpdateVault(_vault);
@@ -70,6 +73,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         bytes[] calldata data,
         TransferParams calldata params
     ) external payable {
+        if (msg.value < amount) revert InsufficientValue();
         (address tokenOut, uint256 amountOut) = _callAdapters(address(0), amount, adapters, data, false, msg.sender);
         _transfer(tokenOut, amountOut, params, msg.value - amount);
     }
@@ -90,6 +94,12 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     function _transfer(address token, uint256 amount, TransferParams calldata params, uint256 fee) internal {
         address dst = dstAddress[params.dstChainId];
         if (dst == address(0)) revert DstChainNotFound(params.dstChainId);
+
+        if (token == address(0)) {
+            if (sgeth == address(0)) revert SgethNotSupported();
+            IStargateEthVault(sgeth).deposit{value: amount}();
+            token = sgeth;
+        }
 
         address pool = IStargateFactory(factory).getPool(params.poolId);
         if (pool == address(0)) revert PoolNotFound(params.poolId);
@@ -184,9 +194,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     ) external payable returns (address tokenOut, uint256 amountOut) {
         (tokenOut, amountOut) = _callAdapters(address(0), msg.value, adapters, data, false, msg.sender);
 
-        if (tokenOut != address(0)) {
-            RefundUtils.refundERC20(tokenOut, msg.sender, vault);
-        }
+        RefundUtils.refundERC20(tokenOut, msg.sender, vault);
         RefundUtils.refundNative(msg.sender, vault);
     }
 
@@ -200,9 +208,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
 
         (tokenOut, amountOut) = _callAdapters(token, amount, adapters, data, false, msg.sender);
 
-        if (tokenOut != address(0)) {
-            RefundUtils.refundERC20(tokenOut, msg.sender, vault);
-        }
+        RefundUtils.refundERC20(tokenOut, msg.sender, vault);
         RefundUtils.refundNative(msg.sender, vault);
     }
 
@@ -214,6 +220,7 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         bool _fallback,
         address from
     ) internal returns (address _tokenOut, uint256 _amountOut) {
+        if (amountIn == 0) revert InvalidAmount();
         if (adapters.length != data.length) revert InvalidParamLengths();
 
         address refundFallback = _fallback ? vault : address(0);

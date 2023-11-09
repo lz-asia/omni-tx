@@ -4,11 +4,14 @@ pragma solidity ^0.8.0;
 
 interface IOmniTx {
     error SwapFailure(bytes reason);
+    error InsufficientValue();
     error DstChainNotFound(uint16 chainId);
+    error SgethNotSupported();
     error PoolNotFound(uint256 poolId);
     error InvalidPoolId(uint256 poolId);
     error Forbidden();
     error InvalidPayload();
+    error InvalidAmount();
     error InvalidParamLengths();
     error CallFailure(address srcFrom, address to, address token, uint256 amount, bytes data, bytes reason);
 

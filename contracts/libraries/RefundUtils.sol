@@ -28,6 +28,8 @@ library RefundUtils {
     }
 
     function refundERC20(address token, address to, address _fallback) internal returns (uint256 amount) {
+        if (token == address(0)) return 0;
+
         amount = IERC20(token).balanceOf(address(this));
         if (amount > 0) {
             if (!_safeTransfer(token, to, amount)) {
