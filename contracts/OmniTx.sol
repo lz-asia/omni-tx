@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IStargateReceiver.sol";
 import "./interfaces/IOmniTx.sol";
 import "./interfaces/IStargateRouter.sol";
-import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargateEthVault.sol";
+import "./interfaces/IStargateFactory.sol";
 import "./interfaces/IStargatePool.sol";
 import "./interfaces/IOmniTxAdapter.sol";
 import "./libraries/RefundUtils.sol";
@@ -20,18 +20,19 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
     using Address for address payable;
 
     address public immutable router;
+    address public immutable stargateEthVault;
     address public immutable factory;
-    address public immutable sgeth;
     address public vault;
     mapping(uint16 => address) public dstAddress;
 
-    constructor(address _router, address _sgeth) {
+    constructor(address _router, address _stargateEthVault, address _owner) {
         router = _router;
+        stargateEthVault = _stargateEthVault;
         factory = IStargateRouter(_router).factory();
-        sgeth = _sgeth;
         address _vault = address(new ERC20Vault(address(this)));
         vault = _vault;
         emit UpdateVault(_vault);
+        transferOwnership(_owner);
     }
 
     function estimateFee(
@@ -95,18 +96,18 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
         address dst = dstAddress[params.dstChainId];
         if (dst == address(0)) revert DstChainNotFound(params.dstChainId);
 
-        if (token == address(0)) {
-            if (sgeth == address(0)) revert SgethNotSupported();
-            IStargateEthVault(sgeth).deposit{value: amount}();
-            token = sgeth;
+        bool native = token == address(0);
+        if (native) {
+            if (stargateEthVault == address(0)) revert NativeNotSupported();
+            IStargateEthVault(stargateEthVault).deposit{value: amount}();
+            IStargateEthVault(stargateEthVault).approve(router, amount);
+        } else {
+            address pool = IStargateFactory(factory).getPool(params.poolId);
+            if (pool == address(0)) revert PoolNotFound(params.poolId);
+            if (token != IStargatePool(pool).token()) revert InvalidPoolId(params.poolId);
+            IERC20(token).approve(router, amount);
         }
 
-        address pool = IStargateFactory(factory).getPool(params.poolId);
-        if (pool == address(0)) revert PoolNotFound(params.poolId);
-
-        if (token != IStargatePool(pool).token()) revert InvalidPoolId(params.poolId);
-
-        IERC20(token).approve(router, amount);
         IStargateRouter(router).swap{value: fee}(
             params.dstChainId,
             params.poolId,
@@ -118,7 +119,9 @@ contract OmniTx is Ownable, ReentrancyGuard, IStargateReceiver, IOmniTx {
             abi.encodePacked(dst),
             abi.encode(msg.sender, params.dstAdapters, params.dstData)
         );
-        IERC20(token).approve(router, 0);
+        if (!native) {
+            IERC20(token).approve(router, 0);
+        }
 
         RefundUtils.refundERC20(token, msg.sender, address(0));
         RefundUtils.refundNative(msg.sender, address(0));

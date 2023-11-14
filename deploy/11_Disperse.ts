@@ -6,6 +6,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await deploy("Disperse", {
         from: deployer,
         args: [omniTx.address],
+        deterministicDeployment: true,
         log: true,
     })
 }

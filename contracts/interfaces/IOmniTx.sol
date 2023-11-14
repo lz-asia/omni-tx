@@ -6,9 +6,10 @@ interface IOmniTx {
     error SwapFailure(bytes reason);
     error InsufficientValue();
     error DstChainNotFound(uint16 chainId);
-    error SgethNotSupported();
+    error NativeNotSupported();
     error PoolNotFound(uint256 poolId);
     error InvalidPoolId(uint256 poolId);
+    error InvalidDstPoolId(uint256 poolId);
     error Forbidden();
     error InvalidPayload();
     error InvalidAmount();

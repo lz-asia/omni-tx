@@ -809,10 +809,10 @@
     jsbi "^3.1.4"
     toformat "^2.0.0"
 
-"@lz-asia/lz-constants@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@lz-asia/lz-constants/-/lz-constants-0.1.1.tgz#e94ee5c60592f35c92d9f5efe4e5b66e062eeb97"
-  integrity sha512-hrDlSmHWHksZKZrlE9ztj5oAFJqN/GTNJsoXEGlAF7QGhCqBGuoHB71BxLWLVM8fDdkyoHy+BPFqUMhRuAHRrQ==
+"@lz-asia/lz-constants@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@lz-asia/lz-constants/-/lz-constants-0.1.5.tgz#06d71d6a624d43a4157694145906e4fec7b16fdc"
+  integrity sha512-hehdRLhU4EWZa8zO8uQggtffO2qZqW01o/pADhOKhT2+iKdM7SDBOFYjqT5dcCCEWnSM93tN4MgEbLs4AxirWA==
 
 "@lz-asia/stargate@^1.0.0":
   version "1.0.0"
@@ -829,9 +829,9 @@
     hardhat-tracer "^1.0.0-alpha.6"
 
 "@lz-kit/cli@^0.7.2":
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/@lz-kit/cli/-/cli-0.7.2.tgz#bf0927ef45f32ed70656b84eb49657e8369c898e"
-  integrity sha512-niusDe1QBypTyOQkPzmSVy32jNWE5bFT/ZpTI44OUX4jwkSCEeCkZ4uDFdKfrSrhtrfwrvjS0NKA1W831GGi7A==
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/@lz-kit/cli/-/cli-0.7.3.tgz#2d50b42db4f2f2dd6fbba8f89b1d397fe2ce59c7"
+  integrity sha512-zbnSzbkw5POtAPTmeEUI1amnzNI6E0TMwxbLLgzc24UXeO9x+N+3FfbI5jgFRQ1Rryl2HMlpN0pIJBNVuVznkQ==
   dependencies:
     ansi-colors "^4.1.3"
     commander "^10.0.1"

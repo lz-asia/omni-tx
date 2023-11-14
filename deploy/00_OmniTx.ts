@@ -1,4 +1,4 @@
-import { router, sgeth } from "@lz-asia/lz-constants/constants/stargate.json"
+import { composer, sgeth } from "@lz-asia/lz-constants/constants/stargate.json"
 import { constants } from "ethers"
 
 module.exports = async ({ getNamedAccounts, deployments, network }) => {
@@ -11,7 +11,8 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
     }
     await deploy("OmniTx", {
         from: deployer,
-        args: [router[networkName], sgeth[networkName] || constants.AddressZero],
+        args: [composer[networkName], sgeth[networkName] || constants.AddressZero, deployer],
+        deterministicDeployment: true,
         log: true,
     })
 }

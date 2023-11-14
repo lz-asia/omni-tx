@@ -13,6 +13,7 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
         await deploy("AaveV2", {
             from: deployer,
             args: [omniTx.address, protocolDataProvider[networkName]],
+            deterministicDeployment: true,
             log: true,
         })
     } else {

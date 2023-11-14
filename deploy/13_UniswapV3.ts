@@ -13,6 +13,7 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
         await deploy("UniswapV3", {
             from: deployer,
             args: [omniTx.address, router[networkName], weth[networkName]],
+            deterministicDeployment: true,
             log: true,
         })
     } else {

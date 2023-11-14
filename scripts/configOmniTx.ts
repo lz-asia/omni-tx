@@ -15,7 +15,7 @@ async function main() {
         console.log("👀 Reusing dstAddress for " + dest.name)
     } else {
         console.log("✅ Updating dstAddress for " + dest.name)
-        await contract.updateDstAddress(dest.provider.network.chainId, newAddr)
+        await contract.updateDstAddress(dest.lzChainId, newAddr)
     }
 }
 

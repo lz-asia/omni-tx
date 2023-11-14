@@ -13,6 +13,7 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
         await deploy("ZeroEx", {
             from: deployer,
             args: [omniTx.address, proxy[networkName]],
+            deterministicDeployment: true,
             log: true,
         })
     } else {
